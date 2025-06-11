@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { ClerkExpressRequireAuth, WithAuthProp } from '@clerk/clerk-sdk-node';
@@ -30,9 +30,13 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 // Protected route example
-app.get('/api/protected', ClerkExpressRequireAuth(), (req: WithAuthProp<Request>, res: Response) => {
-  res.json({ message: 'This is a protected route', user: req.auth });
-});
+app.get(
+  '/api/protected',
+  ClerkExpressRequireAuth({}),
+  (req: WithAuthProp<Request>, res: Response) => {
+    res.json({ message: 'This is a protected route', user: req.auth });
+  }
+);
 
 // Start server
 app.listen(port, () => {
