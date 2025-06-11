@@ -1,7 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { ClerkExpressRequireAuth, WithAuthProp } from '@clerk/clerk-sdk-node';
 import { Pool } from 'pg';
 import Stripe from 'stripe';
 
@@ -28,12 +28,12 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const requireAuth = ClerkExpressRequireAuth();
 
 // Routes
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
 // Protected route example
-app.get('/api/protected', requireAuth, (req, res) => {
+app.get('/api/protected', requireAuth, (req: WithAuthProp<Request>, res: Response) => {
   res.json({ message: 'This is a protected route', user: req.auth });
 });
 
