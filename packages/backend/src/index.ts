@@ -32,8 +32,10 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Protected route example
 const requireAuth = ClerkExpressRequireAuth({});
 
-const protectedHandler: RequestHandler = (req: WithAuthProp<Request>, res: Response) => {
-  res.json({ message: 'This is a protected route', user: req.auth });
+// Type assertion to handle the auth property
+const protectedHandler = (req: Request, res: Response) => {
+  const authReq = req as WithAuthProp<Request>;
+  res.json({ message: 'This is a protected route', user: authReq.auth });
 };
 
 app.get('/api/protected', requireAuth, protectedHandler);
