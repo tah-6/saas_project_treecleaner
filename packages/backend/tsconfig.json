@@ -13,8 +13,11 @@
     "paths": {
       "@shared/*": ["../shared/src/*"]
     },
-    "types": ["node", "express"]
+    "types": ["node", "express", "cors"],
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
-  "include": ["src"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 } 
