@@ -1,21 +1,89 @@
-# React + TypeScript + Vite
+# TreeCleaner SaaS Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack SaaS application built with Vite + React (frontend) and Express + PostgreSQL (backend).
 
-While this project uses React, Vite supports many popular JS frameworks. [See all the supported frameworks](https://vitejs.dev/guide/#scaffolding-your-first-vite-project).
+## Tech Stack
 
-## Deploy Your Own
+- Frontend:
+  - Vite + React
+  - TypeScript
+  - Tailwind CSS
+  - Clerk (Authentication)
+  - Stripe (Payments)
+  - React Router
+  - Zustand (State Management)
 
-Deploy your own Vite project with Vercel.
+- Backend:
+  - Express
+  - TypeScript
+  - PostgreSQL
+  - Clerk (Authentication)
+  - Stripe (Payments)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vercel/vercel/tree/main/examples/vite-react&template=vite-react)
+## Project Structure
 
-_Live Example: https://vite-react-example.vercel.app_
-
-### Deploying From Your Terminal
-
-You can deploy your new Vite project with a single command from your terminal using [Vercel CLI](https://vercel.com/download):
-
-```shell
-$ vercel
 ```
+treecleaner/
+├── packages/
+│   ├── frontend/     # React frontend application
+│   ├── backend/      # Express backend server
+│   └── shared/       # Shared TypeScript types
+```
+
+## Setup Instructions
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+
+   Create `.env` files in both frontend and backend packages:
+
+   Backend (.env):
+   ```
+   PORT=3001
+   DATABASE_URL=postgresql://user:password@localhost:5432/treecleaner
+   CLERK_SECRET_KEY=your_clerk_secret_key
+   STRIPE_SECRET_KEY=your_stripe_secret_key
+   STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+   ```
+
+   Frontend (.env):
+   ```
+   VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   VITE_API_URL=http://localhost:3001
+   ```
+
+4. Set up the database:
+   ```bash
+   # Create PostgreSQL database
+   createdb treecleaner
+   ```
+
+5. Start the development servers:
+   ```bash
+   # Start both frontend and backend
+   npm run dev
+
+   # Or start them separately
+   npm run dev:frontend
+   npm run dev:backend
+   ```
+
+## Development
+
+- Frontend runs on: http://localhost:3000
+- Backend runs on: http://localhost:3001
+
+## Building for Production
+
+```bash
+npm run build
+```
+
+## License
+
+MIT
