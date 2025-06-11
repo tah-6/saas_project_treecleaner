@@ -94,14 +94,14 @@ export class ITCostService {
       },
     });
 
-    const totalCost = costs.reduce((sum, cost) => sum + Number(cost.amount), 0);
+    const totalCost = costs.reduce((sum: number, cost: any) => sum + Number(cost.amount), 0);
     
-    const costsByCategory = costs.reduce((acc, cost) => {
+    const costsByCategory = costs.reduce((acc: Record<CostCategory, number>, cost: any) => {
       acc[cost.category] = (acc[cost.category] || 0) + Number(cost.amount);
       return acc;
     }, {} as Record<CostCategory, number>);
 
-    const costsByFrequency = costs.reduce((acc, cost) => {
+    const costsByFrequency = costs.reduce((acc: Record<BillingFrequency, number>, cost: any) => {
       acc[cost.billingFrequency] = (acc[cost.billingFrequency] || 0) + Number(cost.amount);
       return acc;
     }, {} as Record<BillingFrequency, number>);
