@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { ClerkExpressRequireAuth, WithAuthProp } from '@clerk/clerk-sdk-node';
 import { Pool } from 'pg';
 import Stripe from 'stripe';
+import itCostRoutes from './routes/itCostRoutes';
 
 dotenv.config();
 
@@ -28,6 +29,9 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
+
+// IT Cost routes
+app.use('/api/it-costs', itCostRoutes);
 
 // Protected route example
 const requireAuth = ClerkExpressRequireAuth({});
