@@ -30,15 +30,13 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 // Protected route example
-const requireAuth: RequestHandler = ClerkExpressRequireAuth({});
+const requireAuth = ClerkExpressRequireAuth({});
 
-app.get(
-  '/api/protected',
-  requireAuth,
-  (req: WithAuthProp<Request>, res: Response) => {
-    res.json({ message: 'This is a protected route', user: req.auth });
-  }
-);
+const protectedHandler: RequestHandler = (req: WithAuthProp<Request>, res: Response) => {
+  res.json({ message: 'This is a protected route', user: req.auth });
+};
+
+app.get('/api/protected', requireAuth, protectedHandler);
 
 // Start server
 app.listen(port, () => {
