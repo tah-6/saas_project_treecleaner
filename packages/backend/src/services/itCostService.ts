@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CostCategory, BillingFrequency } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
@@ -6,14 +6,21 @@ const prisma = new PrismaClient();
 export interface CreateITCostInput {
   serviceName: string;
   amount: number;
-  category: string;
+  category: CostCategory;
   billingDate: Date;
+  billingFrequency: BillingFrequency;
   userId: string;
   metadata?: Record<string, any>;
 }
 
 export interface UpdateITCostInput extends Partial<CreateITCostInput> {
   id: string;
+}
+
+export interface CostAnalytics {
+  totalCost: number;
+  costsByCategory: Record<CostCategory, number>;
+  costsByFrequency: Record<BillingFrequency, number>;
 }
 
 export class ITCostService {
@@ -53,7 +60,7 @@ export class ITCostService {
     });
   }
 
-  async getCostsByCategory(userId: string, category: string) {
+  async getCostsByCategory(userId: string, category: CostCategory) {
     return prisma.iTCost.findMany({
       where: {
         userId,
@@ -74,5 +81,35 @@ export class ITCostService {
       },
       orderBy: { billingDate: 'desc' },
     });
+  }
+
+  async getCostAnalytics(userId: string, startDate: Date, endDate: Date): Promise<CostAnalytics> {
+    const costs = await prisma.iTCost.findMany({
+      where: {
+        userId,
+        billingDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    });
+
+    const totalCost = costs.reduce((sum, cost) => sum + Number(cost.amount), 0);
+    
+    const costsByCategory = costs.reduce((acc, cost) => {
+      acc[cost.category] = (acc[cost.category] || 0) + Number(cost.amount);
+      return acc;
+    }, {} as Record<CostCategory, number>);
+
+    const costsByFrequency = costs.reduce((acc, cost) => {
+      acc[cost.billingFrequency] = (acc[cost.billingFrequency] || 0) + Number(cost.amount);
+      return acc;
+    }, {} as Record<BillingFrequency, number>);
+
+    return {
+      totalCost,
+      costsByCategory,
+      costsByFrequency,
+    };
   }
 } 
