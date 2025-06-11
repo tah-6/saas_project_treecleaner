@@ -24,16 +24,13 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 });
 
-// Auth middleware
-const requireAuth = ClerkExpressRequireAuth();
-
 // Routes
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
 // Protected route example
-app.get('/api/protected', requireAuth, (req: WithAuthProp<Request>, res: Response) => {
+app.get('/api/protected', ClerkExpressRequireAuth(), (req: WithAuthProp<Request>, res: Response) => {
   res.json({ message: 'This is a protected route', user: req.auth });
 });
 
