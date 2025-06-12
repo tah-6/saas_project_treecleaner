@@ -95,6 +95,12 @@ app.get('*', (req, res) => {
                                 >
                                     Enable Authentication
                                 </button>
+                                <button 
+                                    id="debug-btn"
+                                    class="bg-yellow-600 text-white px-4 py-2 rounded-md text-sm hover:bg-yellow-700"
+                                >
+                                    Debug Auth
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -168,6 +174,7 @@ app.get('*', (req, res) => {
             const signInBtn = document.getElementById('sign-in-btn');
             const signOutBtn = document.getElementById('sign-out-btn');
             const addAuthBtn = document.getElementById('add-auth-btn');
+            const debugBtn = document.getElementById('debug-btn');
             const costsTableBody = document.getElementById('costs-table-body');
             
             function showError(message) {
@@ -248,11 +255,13 @@ app.get('*', (req, res) => {
                     signInBtn.style.display = 'none';
                     signOutBtn.style.display = 'block';
                     addAuthBtn.style.display = 'none';
+                    debugBtn.style.display = 'block';
                 } else {
                     userInfo.textContent = 'Please sign in';
                     signInBtn.style.display = 'block';
                     signOutBtn.style.display = 'none';
                     addAuthBtn.style.display = 'none';
+                    debugBtn.style.display = 'none';
                 }
             }
             
@@ -261,27 +270,86 @@ app.get('*', (req, res) => {
                 signInBtn.style.display = 'none';
                 signOutBtn.style.display = 'none';
                 addAuthBtn.style.display = 'block';
+                debugBtn.style.display = 'none';
                 authEnabled = false;
+            }
+            
+            function loadClerkScript() {
+                return new Promise((resolve, reject) => {
+                    // Check if Clerk is already loaded
+                    if (window.Clerk) {
+                        console.log('Clerk already available');
+                        resolve();
+                        return;
+                    }
+                    
+                    console.log('Loading Clerk script...');
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/@clerk/clerk-js@4/dist/clerk.browser.js';
+                    script.async = true;
+                    script.crossOrigin = 'anonymous';
+                    
+                    script.onload = () => {
+                        console.log('Clerk script loaded successfully');
+                        // Give it a moment to initialize
+                        setTimeout(() => {
+                            if (window.Clerk) {
+                                console.log('Clerk constructor available');
+                                resolve();
+                            } else {
+                                console.error('Clerk constructor not available after script load');
+                                reject(new Error('Clerk constructor not available'));
+                            }
+                        }, 100);
+                    };
+                    
+                    script.onerror = (error) => {
+                        console.error('Failed to load Clerk script:', error);
+                        reject(new Error('Failed to load Clerk script from CDN'));
+                    };
+                    
+                    document.head.appendChild(script);
+                    
+                    // Timeout fallback
+                    setTimeout(() => {
+                        if (!window.Clerk) {
+                            console.error('Clerk script load timeout');
+                            reject(new Error('Clerk script load timeout'));
+                        }
+                    }, 10000); // 10 second timeout
+                });
             }
             
             function initializeClerk() {
                 return new Promise((resolve, reject) => {
                     try {
                         if (!window.Clerk) {
-                            reject(new Error('Clerk not available'));
+                            reject(new Error('Clerk constructor not available'));
                             return;
                         }
                         
-                        console.log('Initializing Clerk...');
-                        clerk = new window.Clerk('pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk');
+                        console.log('Creating Clerk instance...');
                         
-                        clerk.load().then(() => {
+                        // Use your actual publishable key
+                        const publishableKey = 'pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk';
+                        console.log('Using publishable key:', publishableKey.substring(0, 20) + '...');
+                        
+                        clerk = new window.Clerk(publishableKey);
+                        
+                        console.log('Clerk instance created, loading...');
+                        
+                        clerk.load({
+                            // Add some options for better compatibility
+                            appearance: {
+                                baseTheme: 'light'
+                            }
+                        }).then(() => {
                             console.log('Clerk loaded successfully');
                             clerkLoaded = true;
                             
                             // Check if user is already signed in
                             if (clerk.user) {
-                                console.log('User is already signed in:', clerk.user);
+                                console.log('User is already signed in:', clerk.user.firstName || clerk.user.emailAddresses?.[0]?.emailAddress);
                                 updateUserInterface(clerk.user);
                             } else {
                                 console.log('User is not signed in');
@@ -290,7 +358,7 @@ app.get('*', (req, res) => {
                             
                             // Listen for authentication state changes
                             clerk.addListener('user', (user) => {
-                                console.log('User state changed:', user);
+                                console.log('User state changed:', user ? 'signed in' : 'signed out');
                                 updateUserInterface(user);
                             });
                             
@@ -298,57 +366,54 @@ app.get('*', (req, res) => {
                         }).catch(err => {
                             console.error('Clerk load error:', err);
                             clerkLoaded = false;
-                            reject(err);
+                            reject(new Error('Clerk load failed: ' + err.message));
                         });
                     } catch (err) {
                         console.error('Clerk initialization error:', err);
-                        reject(err);
+                        reject(new Error('Clerk initialization failed: ' + err.message));
                     }
-                });
-            }
-            
-            function loadClerkScript() {
-                return new Promise((resolve, reject) => {
-                    // Check if Clerk is already loaded
-                    if (window.Clerk) {
-                        resolve();
-                        return;
-                    }
-                    
-                    console.log('Loading Clerk script...');
-                    const script = document.createElement('script');
-                    script.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
-                    script.onload = () => {
-                        console.log('Clerk script loaded successfully');
-                        resolve();
-                    };
-                    script.onerror = () => {
-                        console.error('Failed to load Clerk script');
-                        reject(new Error('Failed to load Clerk script'));
-                    };
-                    document.head.appendChild(script);
                 });
             }
             
             async function enableAuthentication() {
                 try {
+                    console.log('Starting authentication enablement...');
                     addAuthBtn.textContent = 'Loading...';
                     addAuthBtn.disabled = true;
                     
-                    // Load Clerk script
+                    // Step 1: Load Clerk script
+                    console.log('Step 1: Loading Clerk script...');
                     await loadClerkScript();
+                    console.log('Step 1: Complete');
                     
-                    // Initialize Clerk
+                    // Step 2: Initialize Clerk
+                    console.log('Step 2: Initializing Clerk...');
                     await initializeClerk();
+                    console.log('Step 2: Complete');
                     
                     authEnabled = true;
-                    console.log('Authentication enabled successfully');
+                    console.log('Authentication enabled successfully!');
                     
                 } catch (err) {
                     console.error('Failed to enable authentication:', err);
-                    alert('Failed to load authentication system. The dashboard will continue to work in demo mode.');
+                    
+                    // More specific error messages
+                    let errorMessage = 'Failed to load authentication system. ';
+                    if (err.message.includes('script')) {
+                        errorMessage += 'Could not load authentication library from CDN.';
+                    } else if (err.message.includes('timeout')) {
+                        errorMessage += 'Authentication system took too long to load.';
+                    } else if (err.message.includes('constructor')) {
+                        errorMessage += 'Authentication library did not initialize properly.';
+                    } else {
+                        errorMessage += 'Error: ' + err.message;
+                    }
+                    
+                    errorMessage += ' The dashboard will continue to work in demo mode.';
+                    
+                    alert(errorMessage);
                     resetToDemo();
-                    addAuthBtn.textContent = 'Enable Authentication';
+                    addAuthBtn.textContent = 'Try Authentication Again';
                     addAuthBtn.disabled = false;
                 }
             }
@@ -387,6 +452,43 @@ app.get('*', (req, res) => {
                 } else {
                     console.log('Clerk not available for sign out');
                 }
+            });
+            
+            debugBtn.addEventListener('click', () => {
+                console.log('Debug button clicked');
+                
+                let debugInfo = 'Debug Information:\\n\\n';
+                debugInfo += 'Window.Clerk available: ' + (!!window.Clerk) + '\\n';
+                debugInfo += 'Clerk instance created: ' + (!!clerk) + '\\n';
+                debugInfo += 'Clerk loaded: ' + clerkLoaded + '\\n';
+                debugInfo += 'Auth enabled: ' + authEnabled + '\\n';
+                debugInfo += 'Current URL: ' + window.location.href + '\\n';
+                debugInfo += 'User agent: ' + navigator.userAgent + '\\n';
+                
+                if (clerk) {
+                    debugInfo += 'Clerk user: ' + (clerk.user ? 'Yes' : 'No') + '\\n';
+                    if (clerk.user) {
+                        debugInfo += 'User ID: ' + clerk.user.id + '\\n';
+                        debugInfo += 'User email: ' + (clerk.user.emailAddresses && clerk.user.emailAddresses[0] ? clerk.user.emailAddresses[0].emailAddress : 'N/A') + '\\n';
+                    }
+                }
+                
+                // Test network connectivity
+                debugInfo += '\\nTesting network connectivity...\\n';
+                
+                console.log(debugInfo);
+                alert(debugInfo);
+                
+                // Test if we can reach Clerk CDN
+                fetch('https://unpkg.com/@clerk/clerk-js@4/dist/clerk.browser.js', { method: 'HEAD' })
+                    .then(response => {
+                        console.log('Clerk CDN test:', response.status === 200 ? 'SUCCESS' : 'FAILED');
+                        alert('Clerk CDN test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED'));
+                    })
+                    .catch(err => {
+                        console.log('Clerk CDN test: FAILED -', err.message);
+                        alert('Clerk CDN test: FAILED - ' + err.message);
+                    });
             });
             
             console.log('Dashboard script loaded - Clerk integration ready!');
