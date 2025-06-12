@@ -283,40 +283,84 @@ app.get('*', (req, res) => {
                         return;
                     }
                     
-                    console.log('Loading Clerk script...');
+                    console.log('Loading Clerk script from custom domain...');
                     const script = document.createElement('script');
-                    script.src = 'https://unpkg.com/@clerk/clerk-js@4/dist/clerk.browser.js';
+                    
+                    // Use your custom Clerk domain
+                    script.src = 'https://improved-redbird-85.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
                     script.async = true;
                     script.crossOrigin = 'anonymous';
                     
+                    let resolved = false;
+                    
                     script.onload = () => {
-                        console.log('Clerk script loaded successfully');
+                        console.log('Clerk script loaded successfully from custom domain');
                         // Give it a moment to initialize
                         setTimeout(() => {
-                            if (window.Clerk) {
+                            if (window.Clerk && !resolved) {
                                 console.log('Clerk constructor available');
+                                resolved = true;
                                 resolve();
-                            } else {
+                            } else if (!resolved) {
                                 console.error('Clerk constructor not available after script load');
-                                reject(new Error('Clerk constructor not available'));
+                                // Try fallback CDN
+                                tryFallbackCDN();
                             }
-                        }, 100);
+                        }, 200);
                     };
                     
                     script.onerror = (error) => {
-                        console.error('Failed to load Clerk script:', error);
-                        reject(new Error('Failed to load Clerk script from CDN'));
+                        console.error('Failed to load Clerk script from custom domain:', error);
+                        if (!resolved) {
+                            tryFallbackCDN();
+                        }
                     };
+                    
+                    function tryFallbackCDN() {
+                        if (resolved) return;
+                        
+                        console.log('Trying official Clerk CDN as fallback...');
+                        const fallbackScript = document.createElement('script');
+                        fallbackScript.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
+                        fallbackScript.async = true;
+                        fallbackScript.crossOrigin = 'anonymous';
+                        
+                        fallbackScript.onload = () => {
+                            console.log('Clerk script loaded from fallback CDN');
+                            setTimeout(() => {
+                                if (window.Clerk && !resolved) {
+                                    console.log('Clerk constructor available from fallback');
+                                    resolved = true;
+                                    resolve();
+                                } else if (!resolved) {
+                                    console.error('Clerk constructor still not available');
+                                    resolved = true;
+                                    reject(new Error('Clerk constructor not available from any source'));
+                                }
+                            }, 200);
+                        };
+                        
+                        fallbackScript.onerror = () => {
+                            console.error('Fallback CDN also failed');
+                            if (!resolved) {
+                                resolved = true;
+                                reject(new Error('Failed to load Clerk script from any source'));
+                            }
+                        };
+                        
+                        document.head.appendChild(fallbackScript);
+                    }
                     
                     document.head.appendChild(script);
                     
                     // Timeout fallback
                     setTimeout(() => {
-                        if (!window.Clerk) {
+                        if (!resolved) {
                             console.error('Clerk script load timeout');
+                            resolved = true;
                             reject(new Error('Clerk script load timeout'));
                         }
-                    }, 10000); // 10 second timeout
+                    }, 15000); // 15 second timeout
                 });
             }
             
@@ -480,14 +524,21 @@ app.get('*', (req, res) => {
                 alert(debugInfo);
                 
                 // Test if we can reach Clerk CDN
-                fetch('https://unpkg.com/@clerk/clerk-js@4/dist/clerk.browser.js', { method: 'HEAD' })
+                fetch('https://improved-redbird-85.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js', { method: 'HEAD' })
                     .then(response => {
-                        console.log('Clerk CDN test:', response.status === 200 ? 'SUCCESS' : 'FAILED');
-                        alert('Clerk CDN test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED'));
+                        console.log('Custom Clerk domain test:', response.status === 200 ? 'SUCCESS' : 'FAILED');
+                        alert('Custom Clerk domain test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED'));
+                        
+                        // Also test fallback CDN
+                        return fetch('https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js', { method: 'HEAD' });
+                    })
+                    .then(response => {
+                        console.log('Fallback CDN test:', response.status === 200 ? 'SUCCESS' : 'FAILED');
+                        alert('Fallback CDN test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED'));
                     })
                     .catch(err => {
-                        console.log('Clerk CDN test: FAILED -', err.message);
-                        alert('Clerk CDN test: FAILED - ' + err.message);
+                        console.log('Network connectivity test: FAILED -', err.message);
+                        alert('Network connectivity test: FAILED - ' + err.message);
                     });
             });
             
