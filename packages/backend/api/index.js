@@ -283,84 +283,73 @@ app.get('*', (req, res) => {
                         return;
                     }
                     
-                    console.log('Loading Clerk script from custom domain...');
-                    const script = document.createElement('script');
-                    
-                    // Use your custom Clerk domain
-                    script.src = 'https://improved-redbird-85.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
-                    script.async = true;
-                    script.crossOrigin = 'anonymous';
-                    
+                    console.log('Trying multiple Clerk loading strategies...');
                     let resolved = false;
+                    let attemptCount = 0;
+                    const maxAttempts = 4;
                     
-                    script.onload = () => {
-                        console.log('Clerk script loaded successfully from custom domain');
-                        // Give it a moment to initialize
-                        setTimeout(() => {
-                            if (window.Clerk && !resolved) {
-                                console.log('Clerk constructor available');
-                                resolved = true;
-                                resolve();
-                            } else if (!resolved) {
-                                console.error('Clerk constructor not available after script load');
-                                // Try fallback CDN
-                                tryFallbackCDN();
+                    const clerkSources = [
+                        // Strategy 1: Frontend API domain with clerk.js
+                        'https://improved-redbird-85.clerk.accounts.dev/v1/client/clerk.js',
+                        // Strategy 2: Frontend API domain with different path
+                        'https://improved-redbird-85.clerk.accounts.dev/clerk.js',
+                        // Strategy 3: Official unpkg CDN
+                        'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js',
+                        // Strategy 4: jsDelivr CDN
+                        'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js'
+                    ];
+                    
+                    function tryNextSource() {
+                        if (resolved || attemptCount >= maxAttempts) {
+                            if (!resolved) {
+                                reject(new Error('All Clerk loading strategies failed'));
                             }
-                        }, 200);
-                    };
-                    
-                    script.onerror = (error) => {
-                        console.error('Failed to load Clerk script from custom domain:', error);
-                        if (!resolved) {
-                            tryFallbackCDN();
+                            return;
                         }
-                    };
-                    
-                    function tryFallbackCDN() {
-                        if (resolved) return;
                         
-                        console.log('Trying official Clerk CDN as fallback...');
-                        const fallbackScript = document.createElement('script');
-                        fallbackScript.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
-                        fallbackScript.async = true;
-                        fallbackScript.crossOrigin = 'anonymous';
+                        const currentSource = clerkSources[attemptCount];
+                        console.log('Attempt ' + (attemptCount + 1) + ': Loading from ' + currentSource);
                         
-                        fallbackScript.onload = () => {
-                            console.log('Clerk script loaded from fallback CDN');
+                        const script = document.createElement('script');
+                        script.src = currentSource;
+                        script.async = true;
+                        script.crossOrigin = 'anonymous';
+                        
+                        script.onload = () => {
+                            console.log('Script loaded from attempt ' + (attemptCount + 1));
                             setTimeout(() => {
                                 if (window.Clerk && !resolved) {
-                                    console.log('Clerk constructor available from fallback');
+                                    console.log('SUCCESS: Clerk constructor available from attempt ' + (attemptCount + 1));
                                     resolved = true;
                                     resolve();
                                 } else if (!resolved) {
-                                    console.error('Clerk constructor still not available');
-                                    resolved = true;
-                                    reject(new Error('Clerk constructor not available from any source'));
+                                    console.log('Attempt ' + (attemptCount + 1) + ' failed - Clerk constructor not available');
+                                    attemptCount++;
+                                    tryNextSource();
                                 }
-                            }, 200);
+                            }, 300);
                         };
                         
-                        fallbackScript.onerror = () => {
-                            console.error('Fallback CDN also failed');
-                            if (!resolved) {
-                                resolved = true;
-                                reject(new Error('Failed to load Clerk script from any source'));
-                            }
+                        script.onerror = (error) => {
+                            console.error('Attempt ' + (attemptCount + 1) + ' failed to load:', error);
+                            attemptCount++;
+                            tryNextSource();
                         };
                         
-                        document.head.appendChild(fallbackScript);
+                        document.head.appendChild(script);
                     }
                     
-                    document.head.appendChild(script);
+                    // Start the first attempt
+                    tryNextSource();
                     
-                    // Timeout fallback
+                    // Overall timeout
                     setTimeout(() => {
                         if (!resolved) {
-                            console.error('Clerk script load timeout');
+                            console.error('All Clerk loading attempts timed out');
                             resolved = true;
-                            reject(new Error('Clerk script load timeout'));
+                            reject(new Error('Clerk script load timeout - all strategies failed'));
                         }
-                    }, 15000); // 15 second timeout
+                    }, 20000); // 20 second total timeout
                 });
             }
             
@@ -523,23 +512,40 @@ app.get('*', (req, res) => {
                 console.log(debugInfo);
                 alert(debugInfo);
                 
-                // Test if we can reach Clerk CDN
-                fetch('https://improved-redbird-85.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js', { method: 'HEAD' })
-                    .then(response => {
-                        console.log('Custom Clerk domain test:', response.status === 200 ? 'SUCCESS' : 'FAILED');
-                        alert('Custom Clerk domain test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED'));
-                        
-                        // Also test fallback CDN
-                        return fetch('https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js', { method: 'HEAD' });
-                    })
-                    .then(response => {
-                        console.log('Fallback CDN test:', response.status === 200 ? 'SUCCESS' : 'FAILED');
-                        alert('Fallback CDN test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED'));
-                    })
-                    .catch(err => {
-                        console.log('Network connectivity test: FAILED -', err.message);
-                        alert('Network connectivity test: FAILED - ' + err.message);
-                    });
+                // Test all Clerk sources
+                const testSources = [
+                    'https://improved-redbird-85.clerk.accounts.dev/v1/client/clerk.js',
+                    'https://improved-redbird-85.clerk.accounts.dev/clerk.js',
+                    'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js',
+                    'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js'
+                ];
+                
+                let testResults = 'Testing Clerk sources:\\n';
+                let testsCompleted = 0;
+                
+                testSources.forEach((source, index) => {
+                    fetch(source, { method: 'HEAD' })
+                        .then(response => {
+                            const result = 'Source ' + (index + 1) + ': ' + (response.status === 200 ? 'SUCCESS' : 'FAILED (' + response.status + ')');
+                            testResults += result + '\\n';
+                            console.log(result);
+                            testsCompleted++;
+                            
+                            if (testsCompleted === testSources.length) {
+                                alert(testResults);
+                            }
+                        })
+                        .catch(err => {
+                            const result = 'Source ' + (index + 1) + ': FAILED - ' + err.message;
+                            testResults += result + '\\n';
+                            console.log(result);
+                            testsCompleted++;
+                            
+                            if (testsCompleted === testSources.length) {
+                                alert(testResults);
+                            }
+                        });
+                });
             });
             
             console.log('Dashboard script loaded - Clerk integration ready!');
