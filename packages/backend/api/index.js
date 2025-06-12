@@ -76,10 +76,24 @@ app.get('*', (req, res) => {
                             <div class="flex items-center space-x-4">
                                 <span class="text-sm text-gray-700" id="user-info">Demo Mode - Working!</span>
                                 <button 
+                                    id="sign-in-btn"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+                                    style="display: none;"
+                                >
+                                    Sign In
+                                </button>
+                                <button 
+                                    id="sign-out-btn"
+                                    class="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700"
+                                    style="display: none;"
+                                >
+                                    Sign Out
+                                </button>
+                                <button 
                                     id="add-auth-btn"
                                     class="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700"
                                 >
-                                    Add Authentication
+                                    Enable Authentication
                                 </button>
                             </div>
                         </div>
@@ -151,6 +165,8 @@ app.get('*', (req, res) => {
             const chartSection = document.getElementById('chart-section');
             const tableSection = document.getElementById('table-section');
             const userInfo = document.getElementById('user-info');
+            const signInBtn = document.getElementById('sign-in-btn');
+            const signOutBtn = document.getElementById('sign-out-btn');
             const addAuthBtn = document.getElementById('add-auth-btn');
             const costsTableBody = document.getElementById('costs-table-body');
             
@@ -217,12 +233,163 @@ app.get('*', (req, res) => {
             console.log('Loading dashboard...');
             fetchCosts();
             
-            // Event listener for adding authentication later
+            // Clerk integration variables
+            let clerk = null;
+            let clerkLoaded = false;
+            let authEnabled = false;
+            
+            function updateUserInterface(user) {
+                if (user) {
+                    const displayName = user.firstName || 
+                                      user.lastName || 
+                                      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) || 
+                                      'User';
+                    userInfo.textContent = \`Welcome, \${displayName}\`;
+                    signInBtn.style.display = 'none';
+                    signOutBtn.style.display = 'block';
+                    addAuthBtn.style.display = 'none';
+                } else {
+                    userInfo.textContent = 'Please sign in';
+                    signInBtn.style.display = 'block';
+                    signOutBtn.style.display = 'none';
+                    addAuthBtn.style.display = 'none';
+                }
+            }
+            
+            function resetToDemo() {
+                userInfo.textContent = 'Demo Mode - Working!';
+                signInBtn.style.display = 'none';
+                signOutBtn.style.display = 'none';
+                addAuthBtn.style.display = 'block';
+                authEnabled = false;
+            }
+            
+            function initializeClerk() {
+                return new Promise((resolve, reject) => {
+                    try {
+                        if (!window.Clerk) {
+                            reject(new Error('Clerk not available'));
+                            return;
+                        }
+                        
+                        console.log('Initializing Clerk...');
+                        clerk = new window.Clerk('pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk');
+                        
+                        clerk.load().then(() => {
+                            console.log('Clerk loaded successfully');
+                            clerkLoaded = true;
+                            
+                            // Check if user is already signed in
+                            if (clerk.user) {
+                                console.log('User is already signed in:', clerk.user);
+                                updateUserInterface(clerk.user);
+                            } else {
+                                console.log('User is not signed in');
+                                updateUserInterface(null);
+                            }
+                            
+                            // Listen for authentication state changes
+                            clerk.addListener('user', (user) => {
+                                console.log('User state changed:', user);
+                                updateUserInterface(user);
+                            });
+                            
+                            resolve(clerk);
+                        }).catch(err => {
+                            console.error('Clerk load error:', err);
+                            clerkLoaded = false;
+                            reject(err);
+                        });
+                    } catch (err) {
+                        console.error('Clerk initialization error:', err);
+                        reject(err);
+                    }
+                });
+            }
+            
+            function loadClerkScript() {
+                return new Promise((resolve, reject) => {
+                    // Check if Clerk is already loaded
+                    if (window.Clerk) {
+                        resolve();
+                        return;
+                    }
+                    
+                    console.log('Loading Clerk script...');
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
+                    script.onload = () => {
+                        console.log('Clerk script loaded successfully');
+                        resolve();
+                    };
+                    script.onerror = () => {
+                        console.error('Failed to load Clerk script');
+                        reject(new Error('Failed to load Clerk script'));
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+            
+            async function enableAuthentication() {
+                try {
+                    addAuthBtn.textContent = 'Loading...';
+                    addAuthBtn.disabled = true;
+                    
+                    // Load Clerk script
+                    await loadClerkScript();
+                    
+                    // Initialize Clerk
+                    await initializeClerk();
+                    
+                    authEnabled = true;
+                    console.log('Authentication enabled successfully');
+                    
+                } catch (err) {
+                    console.error('Failed to enable authentication:', err);
+                    alert('Failed to load authentication system. The dashboard will continue to work in demo mode.');
+                    resetToDemo();
+                    addAuthBtn.textContent = 'Enable Authentication';
+                    addAuthBtn.disabled = false;
+                }
+            }
+            
+            // Event listeners
             addAuthBtn.addEventListener('click', () => {
-                alert('Authentication will be added in the next step once the dashboard is stable!');
+                console.log('Enable authentication clicked');
+                enableAuthentication();
             });
             
-            console.log('Dashboard script loaded - No Clerk, no crashes!');
+            signInBtn.addEventListener('click', () => {
+                console.log('Sign in clicked');
+                if (clerk && clerkLoaded) {
+                    clerk.redirectToSignIn();
+                } else {
+                    alert('Authentication system is not ready. Please try again.');
+                }
+            });
+            
+            signOutBtn.addEventListener('click', () => {
+                console.log('Sign out clicked');
+                if (clerk && clerkLoaded) {
+                    signOutBtn.textContent = 'Signing out...';
+                    signOutBtn.disabled = true;
+                    
+                    clerk.signOut().then(() => {
+                        console.log('Successfully signed out');
+                        updateUserInterface(null);
+                        signOutBtn.textContent = 'Sign Out';
+                        signOutBtn.disabled = false;
+                    }).catch(err => {
+                        console.error('Sign out error:', err);
+                        signOutBtn.textContent = 'Sign Out';
+                        signOutBtn.disabled = false;
+                    });
+                } else {
+                    console.log('Clerk not available for sign out');
+                }
+            });
+            
+            console.log('Dashboard script loaded - Clerk integration ready!');
         </script>
     </body>
     </html>
