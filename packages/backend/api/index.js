@@ -11,18 +11,6 @@ app.use(express.json());
 // Serve static files (we'll add the built frontend here)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Backend API is running!', 
-    endpoints: [
-      'GET / - This message',
-      'GET /api/health - Health check',
-      'GET /api/test - Test endpoint'
-    ]
-  });
-});
-
 // API routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
