@@ -74,19 +74,19 @@ app.get('*', (req, res) => {
                         <div class="flex justify-between items-center py-4">
                             <h1 class="text-2xl font-bold text-gray-900">Cost Management Dashboard</h1>
                             <div class="flex items-center space-x-4">
-                                <span class="text-sm text-gray-700" id="user-info">Loading...</span>
+                                <span class="text-sm text-gray-700" id="user-info">Demo Mode</span>
+                                <button 
+                                    id="sign-in-btn"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+                                >
+                                    Sign In with Clerk
+                                </button>
                                 <button 
                                     id="sign-out-btn"
                                     class="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700"
                                     style="display: none;"
                                 >
                                     Sign Out
-                                </button>
-                                <button 
-                                    id="sign-in-btn"
-                                    class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
-                                >
-                                    Sign In
                                 </button>
                             </div>
                         </div>
@@ -148,14 +148,8 @@ app.get('*', (req, res) => {
             </div>
         </div>
 
-        <!-- Clerk SDK -->
-        <script src="https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
-        
         <script>
             console.log('Dashboard script starting...');
-            
-            // Initialize Clerk
-            const clerk = new window.Clerk('pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk');
             
             // DOM elements
             const loading = document.getElementById('loading');
@@ -227,36 +221,56 @@ app.get('*', (req, res) => {
                 }
             }
             
-            // Initialize app
-            clerk.load().then(() => {
-                console.log('Clerk loaded');
-                if (clerk.user) {
-                    console.log('User is signed in:', clerk.user);
-                    userInfo.textContent = 'Welcome, ' + (clerk.user.firstName || 'User');
-                    signInBtn.style.display = 'none';
-                    signOutBtn.style.display = 'block';
-                    fetchCosts();
-                } else {
-                    console.log('User is not signed in');
-                    userInfo.textContent = 'Please sign in to view dashboard';
-                    signInBtn.style.display = 'block';
-                    signOutBtn.style.display = 'none';
-                    loading.classList.add('hidden');
+            // Initialize Clerk (optional)
+            let clerk = null;
+            
+            function initializeClerk() {
+                if (window.Clerk) {
+                    clerk = new window.Clerk('pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk');
+                    clerk.load().then(() => {
+                        console.log('Clerk loaded successfully');
+                        if (clerk.user) {
+                            console.log('User is signed in:', clerk.user);
+                            userInfo.textContent = 'Welcome, ' + (clerk.user.firstName || clerk.user.emailAddresses[0]?.emailAddress || 'User');
+                            signInBtn.style.display = 'none';
+                            signOutBtn.style.display = 'block';
+                        }
+                    }).catch(err => {
+                        console.log('Clerk load error (optional):', err);
+                    });
                 }
-            }).catch(err => {
-                console.error('Clerk load error:', err);
-                showError('Authentication system failed to load');
-            });
+            }
+            
+            // Load dashboard immediately (don't wait for auth)
+            console.log('Loading dashboard...');
+            fetchCosts();
+            
+            // Try to load Clerk (optional)
+            const clerkScript = document.createElement('script');
+            clerkScript.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
+            clerkScript.onload = initializeClerk;
+            clerkScript.onerror = () => console.log('Clerk failed to load (optional)');
+            document.head.appendChild(clerkScript);
             
             // Event listeners
             signInBtn.addEventListener('click', () => {
                 console.log('Sign in clicked');
-                clerk.redirectToSignIn();
+                if (clerk) {
+                    clerk.redirectToSignIn();
+                } else {
+                    alert('Authentication system is loading. Please try again in a moment.');
+                }
             });
             
             signOutBtn.addEventListener('click', () => {
                 console.log('Sign out clicked');
-                clerk.signOut();
+                if (clerk) {
+                    clerk.signOut().then(() => {
+                        userInfo.textContent = 'Demo Mode';
+                        signInBtn.style.display = 'block';
+                        signOutBtn.style.display = 'none';
+                    });
+                }
             });
             
             console.log('Dashboard script loaded');
