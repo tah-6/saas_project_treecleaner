@@ -317,17 +317,41 @@ app.get('*', (req, res) => {
                         
                         script.onload = () => {
                             console.log('Script loaded from attempt ' + (attemptCount + 1));
-                            setTimeout(() => {
-                                if (window.Clerk && !resolved) {
-                                    console.log('SUCCESS: Clerk constructor available from attempt ' + (attemptCount + 1));
+                            
+                            // Try multiple ways to detect Clerk availability
+                            let checkAttempts = 0;
+                            const maxChecks = 10;
+                            
+                            function checkForClerk() {
+                                checkAttempts++;
+                                console.log('Checking for Clerk availability, attempt ' + checkAttempts);
+                                
+                                // Try different ways to access Clerk
+                                const clerkAvailable = window.Clerk || 
+                                                     window.clerk || 
+                                                     (window.ClerkJS && window.ClerkJS.Clerk) ||
+                                                     (typeof Clerk !== 'undefined');
+                                
+                                if (clerkAvailable && !resolved) {
+                                    console.log('SUCCESS: Clerk found via method ' + checkAttempts);
+                                    // Set window.Clerk if it's available under a different name
+                                    if (!window.Clerk) {
+                                        window.Clerk = window.clerk || window.ClerkJS.Clerk || Clerk;
+                                    }
                                     resolved = true;
                                     resolve();
+                                } else if (checkAttempts < maxChecks && !resolved) {
+                                    console.log('Clerk not yet available, retrying in 100ms...');
+                                    setTimeout(checkForClerk, 100);
                                 } else if (!resolved) {
-                                    console.log('Attempt ' + (attemptCount + 1) + ' failed - Clerk constructor not available');
+                                    console.log('Attempt ' + (attemptCount + 1) + ' failed - Clerk constructor not available after ' + maxChecks + ' checks');
                                     attemptCount++;
                                     tryNextSource();
                                 }
-                            }, 300);
+                            }
+                            
+                            // Start checking immediately, then with delays
+                            checkForClerk();
                         };
                         
                         script.onerror = (error) => {
@@ -498,7 +522,24 @@ app.get('*', (req, res) => {
                 debugInfo += 'Current URL: ' + window.location.href + '\\n';
                 debugInfo += 'User agent: ' + navigator.userAgent + '\\n';
                 
+                // Check for Clerk in different ways
+                debugInfo += '\\nClerk Detection:\\n';
+                debugInfo += 'window.Clerk: ' + (!!window.Clerk) + '\\n';
+                debugInfo += 'window.clerk: ' + (!!window.clerk) + '\\n';
+                debugInfo += 'window.ClerkJS: ' + (!!window.ClerkJS) + '\\n';
+                debugInfo += 'typeof Clerk: ' + (typeof Clerk !== 'undefined' ? typeof Clerk : 'undefined') + '\\n';
+                
+                // List all window properties that might be Clerk-related
+                const clerkProps = [];
+                for (let prop in window) {
+                    if (prop.toLowerCase().includes('clerk')) {
+                        clerkProps.push(prop);
+                    }
+                }
+                debugInfo += 'Clerk-related window properties: ' + (clerkProps.length > 0 ? clerkProps.join(', ') : 'none') + '\\n';
+                
                 if (clerk) {
+                    debugInfo += '\\nClerk Instance Info:\\n';
                     debugInfo += 'Clerk user: ' + (clerk.user ? 'Yes' : 'No') + '\\n';
                     if (clerk.user) {
                         debugInfo += 'User ID: ' + clerk.user.id + '\\n';
