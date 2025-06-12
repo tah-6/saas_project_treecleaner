@@ -44,7 +44,12 @@ const protectedHandler = (req: Request, res: Response) => {
 
 app.get('/api/protected', requireAuth, protectedHandler);
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-}); 
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+// Export for Vercel
+export default app; 

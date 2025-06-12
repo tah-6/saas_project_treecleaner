@@ -64,7 +64,7 @@ export class ITCostController {
             if (cost.userId !== userId)
                 return res.status(403).json({ error: 'Forbidden' });
             const data = {
-                id: id,
+                id,
                 ...req.body,
             };
             const updatedCost = await itCostService.updateCost(data);
@@ -104,7 +104,8 @@ export class ITCostController {
             if (!category || typeof category !== 'string') {
                 return res.status(400).json({ error: 'Category is required' });
             }
-            const costs = await itCostService.getCostsByCategory(userId, category);
+            const costs = await itCostService.getCostsByCategory(userId, category // You may replace `any` with `CostCategory` if it's an enum
+            );
             res.json(costs);
         }
         catch (error) {
