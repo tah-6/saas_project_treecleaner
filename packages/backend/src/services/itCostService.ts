@@ -1,7 +1,24 @@
-import { PrismaClient, CostCategory, BillingFrequency } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
+
+// Define enums locally since they might not be exported from Prisma
+export enum CostCategory {
+  SOFTWARE = 'SOFTWARE',
+  HARDWARE = 'HARDWARE',
+  CLOUD = 'CLOUD',
+  SUBSCRIPTION = 'SUBSCRIPTION',
+  MAINTENANCE = 'MAINTENANCE',
+  OTHER = 'OTHER'
+}
+
+export enum BillingFrequency {
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  YEARLY = 'YEARLY',
+  ONE_TIME = 'ONE_TIME'
+}
 
 export interface CreateITCostInput {
   serviceName: string;
@@ -97,12 +114,14 @@ export class ITCostService {
     const totalCost = costs.reduce((sum: number, cost: any) => sum + Number(cost.amount), 0);
     
     const costsByCategory = costs.reduce((acc: Record<CostCategory, number>, cost: any) => {
-      acc[cost.category] = (acc[cost.category] || 0) + Number(cost.amount);
+      const category = cost.category as CostCategory;
+      acc[category] = (acc[category] || 0) + Number(cost.amount);
       return acc;
     }, {} as Record<CostCategory, number>);
 
     const costsByFrequency = costs.reduce((acc: Record<BillingFrequency, number>, cost: any) => {
-      acc[cost.billingFrequency] = (acc[cost.billingFrequency] || 0) + Number(cost.amount);
+      const frequency = cost.billingFrequency as BillingFrequency;
+      acc[frequency] = (acc[frequency] || 0) + Number(cost.amount);
       return acc;
     }, {} as Record<BillingFrequency, number>);
 

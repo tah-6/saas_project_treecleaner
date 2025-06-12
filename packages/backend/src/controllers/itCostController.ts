@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
 import { WithAuthProp } from '@clerk/clerk-sdk-node';
-import { ITCostService, CreateITCostInput, UpdateITCostInput } from '../services/itCostService';
+import { ITCostService, CreateITCostInput, UpdateITCostInput, CostCategory } from '../services/itCostService';
 
 const itCostService = new ITCostService();
 
 export class ITCostController {
   async createCost(req: WithAuthProp<Request>, res: Response) {
     try {
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
       const data: CreateITCostInput = {
         ...req.body,
-        userId: req.auth.userId,
+        userId,
       };
       const cost = await itCostService.createCost(data);
       res.status(201).json(cost);
@@ -20,17 +23,18 @@ export class ITCostController {
 
   async getCostById(req: WithAuthProp<Request<{ id: string }>>, res: Response) {
     try {
-      const id: string | null = req.params.id ?? null;
-      if (typeof id !== 'string' || !id) {
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { id } = req.params;
+      if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'ID is required' });
       }
-      const cost = await itCostService.getCostById(String(id));
-      if (!cost) {
-        return res.status(404).json({ error: 'IT cost not found' });
-      }
-      if (cost.userId !== req.auth.userId) {
-        return res.status(403).json({ error: 'Unauthorized' });
-      }
+
+      const cost = await itCostService.getCostById(id!);
+      if (!cost) return res.status(404).json({ error: 'IT cost not found' });
+      if (cost.userId !== userId) return res.status(403).json({ error: 'Forbidden' });
+
       res.json(cost);
     } catch (error) {
       res.status(400).json({ error: 'Failed to get IT cost' });
@@ -39,7 +43,10 @@ export class ITCostController {
 
   async getCostsByUserId(req: WithAuthProp<Request>, res: Response) {
     try {
-      const costs = await itCostService.getCostsByUserId(req.auth.userId);
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const costs = await itCostService.getCostsByUserId(userId);
       res.json(costs);
     } catch (error) {
       res.status(400).json({ error: 'Failed to get IT costs' });
@@ -48,20 +55,20 @@ export class ITCostController {
 
   async updateCost(req: WithAuthProp<Request<{ id: string }>>, res: Response) {
     try {
-      const id: string | null = req.params.id ?? null;
-      if (typeof id !== 'string' || !id) {
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { id } = req.params;
+      if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'ID is required' });
       }
-      const cost = await itCostService.getCostById(String(id));
-      if (!cost) {
-        return res.status(404).json({ error: 'IT cost not found' });
-      }
-      if (cost.userId !== req.auth.userId) {
-        return res.status(403).json({ error: 'Unauthorized' });
-      }
+
+      const cost = await itCostService.getCostById(id!);
+      if (!cost) return res.status(404).json({ error: 'IT cost not found' });
+      if (cost.userId !== userId) return res.status(403).json({ error: 'Forbidden' });
 
       const data: UpdateITCostInput = {
-        id: String(id),
+        id: id!,
         ...req.body,
       };
       const updatedCost = await itCostService.updateCost(data);
@@ -73,19 +80,19 @@ export class ITCostController {
 
   async deleteCost(req: WithAuthProp<Request<{ id: string }>>, res: Response) {
     try {
-      const id: string | null = req.params.id ?? null;
-      if (typeof id !== 'string' || !id) {
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { id } = req.params;
+      if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'ID is required' });
       }
-      const cost = await itCostService.getCostById(String(id));
-      if (!cost) {
-        return res.status(404).json({ error: 'IT cost not found' });
-      }
-      if (cost.userId !== req.auth.userId) {
-        return res.status(403).json({ error: 'Unauthorized' });
-      }
 
-      await itCostService.deleteCost(String(id));
+      const cost = await itCostService.getCostById(id!);
+      if (!cost) return res.status(404).json({ error: 'IT cost not found' });
+      if (cost.userId !== userId) return res.status(403).json({ error: 'Forbidden' });
+
+      await itCostService.deleteCost(id!);
       res.status(204).send();
     } catch (error) {
       res.status(400).json({ error: 'Failed to delete IT cost' });
@@ -94,13 +101,17 @@ export class ITCostController {
 
   async getCostsByCategory(req: WithAuthProp<Request<{ category: string }>>, res: Response) {
     try {
-      const category: string | null = req.params.category ?? null;
-      if (typeof category !== 'string' || !category) {
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { category } = req.params;
+      if (!category || typeof category !== 'string') {
         return res.status(400).json({ error: 'Category is required' });
       }
+
       const costs = await itCostService.getCostsByCategory(
-        req.auth.userId,
-        String(category) as any // Cast to CostCategory if needed
+        userId,
+        category as CostCategory
       );
       res.json(costs);
     } catch (error) {
@@ -110,13 +121,16 @@ export class ITCostController {
 
   async getCostsByDateRange(req: WithAuthProp<Request>, res: Response) {
     try {
+      const userId = req.auth?.userId;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
       const { startDate, endDate } = req.query;
       if (!startDate || !endDate) {
         return res.status(400).json({ error: 'Start date and end date are required' });
       }
 
       const costs = await itCostService.getCostsByDateRange(
-        req.auth.userId,
+        userId,
         new Date(startDate as string),
         new Date(endDate as string)
       );
@@ -125,4 +139,4 @@ export class ITCostController {
       res.status(400).json({ error: 'Failed to get IT costs by date range' });
     }
   }
-} 
+}
