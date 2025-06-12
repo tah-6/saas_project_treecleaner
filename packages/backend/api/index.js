@@ -283,97 +283,71 @@ app.get('*', (req, res) => {
                         return;
                     }
                     
-                    console.log('Trying multiple Clerk loading strategies...');
+                    console.log('Loading Clerk from unpkg CDN (known working source)...');
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
+                    script.async = true;
+                    script.crossOrigin = 'anonymous';
+                    
                     let resolved = false;
-                    let attemptCount = 0;
-                    const maxAttempts = 4;
                     
-                    const clerkSources = [
-                        // Strategy 1: Frontend API domain with clerk.js
-                        'https://improved-redbird-85.clerk.accounts.dev/v1/client/clerk.js',
-                        // Strategy 2: Frontend API domain with different path
-                        'https://improved-redbird-85.clerk.accounts.dev/clerk.js',
-                        // Strategy 3: Official unpkg CDN
-                        'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js',
-                        // Strategy 4: jsDelivr CDN
-                        'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js'
-                    ];
-                    
-                    function tryNextSource() {
-                        if (resolved || attemptCount >= maxAttempts) {
-                            if (!resolved) {
-                                reject(new Error('All Clerk loading strategies failed'));
+                    script.onload = () => {
+                        console.log('Clerk script loaded successfully from unpkg');
+                        
+                        // Check for Clerk with multiple detection methods
+                        let checkAttempts = 0;
+                        const maxChecks = 20; // More attempts since we know it works
+                        
+                        function checkForClerk() {
+                            checkAttempts++;
+                            console.log('Checking for Clerk availability, attempt ' + checkAttempts);
+                            
+                            // Try different ways to access Clerk
+                            const clerkAvailable = window.Clerk || 
+                                                 window.clerk || 
+                                                 (window.ClerkJS && window.ClerkJS.Clerk) ||
+                                                 (typeof Clerk !== 'undefined');
+                            
+                            if (clerkAvailable && !resolved) {
+                                console.log('SUCCESS: Clerk found on attempt ' + checkAttempts);
+                                // Set window.Clerk if it's available under a different name
+                                if (!window.Clerk) {
+                                    window.Clerk = window.clerk || (window.ClerkJS && window.ClerkJS.Clerk) || Clerk;
+                                }
+                                resolved = true;
+                                resolve();
+                            } else if (checkAttempts < maxChecks && !resolved) {
+                                console.log('Clerk not yet available, retrying in 150ms...');
+                                setTimeout(checkForClerk, 150);
+                            } else if (!resolved) {
+                                console.error('Clerk constructor not available after ' + maxChecks + ' checks');
+                                resolved = true;
+                                reject(new Error('Clerk constructor not available after script load'));
                             }
-                            return;
                         }
                         
-                        const currentSource = clerkSources[attemptCount];
-                        console.log('Attempt ' + (attemptCount + 1) + ': Loading from ' + currentSource);
-                        
-                        const script = document.createElement('script');
-                        script.src = currentSource;
-                        script.async = true;
-                        script.crossOrigin = 'anonymous';
-                        
-                        script.onload = () => {
-                            console.log('Script loaded from attempt ' + (attemptCount + 1));
-                            
-                            // Try multiple ways to detect Clerk availability
-                            let checkAttempts = 0;
-                            const maxChecks = 10;
-                            
-                            function checkForClerk() {
-                                checkAttempts++;
-                                console.log('Checking for Clerk availability, attempt ' + checkAttempts);
-                                
-                                // Try different ways to access Clerk
-                                const clerkAvailable = window.Clerk || 
-                                                     window.clerk || 
-                                                     (window.ClerkJS && window.ClerkJS.Clerk) ||
-                                                     (typeof Clerk !== 'undefined');
-                                
-                                if (clerkAvailable && !resolved) {
-                                    console.log('SUCCESS: Clerk found via method ' + checkAttempts);
-                                    // Set window.Clerk if it's available under a different name
-                                    if (!window.Clerk) {
-                                        window.Clerk = window.clerk || window.ClerkJS.Clerk || Clerk;
-                                    }
-                                    resolved = true;
-                                    resolve();
-                                } else if (checkAttempts < maxChecks && !resolved) {
-                                    console.log('Clerk not yet available, retrying in 100ms...');
-                                    setTimeout(checkForClerk, 100);
-                                } else if (!resolved) {
-                                    console.log('Attempt ' + (attemptCount + 1) + ' failed - Clerk constructor not available after ' + maxChecks + ' checks');
-                                    attemptCount++;
-                                    tryNextSource();
-                                }
-                            }
-                            
-                            // Start checking immediately, then with delays
-                            checkForClerk();
-                        };
-                        
-                        script.onerror = (error) => {
-                            console.error('Attempt ' + (attemptCount + 1) + ' failed to load:', error);
-                            attemptCount++;
-                            tryNextSource();
-                        };
-                        
-                        document.head.appendChild(script);
-                    }
+                        // Start checking
+                        checkForClerk();
+                    };
                     
-                    // Start the first attempt
-                    tryNextSource();
+                    script.onerror = (error) => {
+                        console.error('Failed to load Clerk script from unpkg:', error);
+                        if (!resolved) {
+                            resolved = true;
+                            reject(new Error('Failed to load Clerk script from unpkg CDN'));
+                        }
+                    };
                     
-                    // Overall timeout
+                    document.head.appendChild(script);
+                    
+                    // Timeout after 10 seconds
                     setTimeout(() => {
                         if (!resolved) {
-                            console.error('All Clerk loading attempts timed out');
+                            console.error('Clerk script load timeout');
                             resolved = true;
-                            reject(new Error('Clerk script load timeout - all strategies failed'));
+                            reject(new Error('Clerk script load timeout'));
                         }
-                    }, 20000); // 20 second total timeout
+                    }, 10000);
                 });
             }
             
@@ -553,40 +527,19 @@ app.get('*', (req, res) => {
                 console.log(debugInfo);
                 alert(debugInfo);
                 
-                // Test all Clerk sources
-                const testSources = [
-                    'https://improved-redbird-85.clerk.accounts.dev/v1/client/clerk.js',
-                    'https://improved-redbird-85.clerk.accounts.dev/clerk.js',
-                    'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js',
-                    'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js'
-                ];
-                
-                let testResults = 'Testing Clerk sources:\\n';
-                let testsCompleted = 0;
-                
-                testSources.forEach((source, index) => {
-                    fetch(source, { method: 'HEAD' })
-                        .then(response => {
-                            const result = 'Source ' + (index + 1) + ': ' + (response.status === 200 ? 'SUCCESS' : 'FAILED (' + response.status + ')');
-                            testResults += result + '\\n';
-                            console.log(result);
-                            testsCompleted++;
-                            
-                            if (testsCompleted === testSources.length) {
-                                alert(testResults);
-                            }
-                        })
-                        .catch(err => {
-                            const result = 'Source ' + (index + 1) + ': FAILED - ' + err.message;
-                            testResults += result + '\\n';
-                            console.log(result);
-                            testsCompleted++;
-                            
-                            if (testsCompleted === testSources.length) {
-                                alert(testResults);
-                            }
-                        });
-                });
+                // Test the working Clerk source
+                console.log('Testing unpkg CDN connectivity...');
+                fetch('https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js', { method: 'HEAD' })
+                    .then(response => {
+                        const result = 'Unpkg CDN test: ' + (response.status === 200 ? 'SUCCESS' : 'FAILED (' + response.status + ')');
+                        console.log(result);
+                        alert(result);
+                    })
+                    .catch(err => {
+                        const result = 'Unpkg CDN test: FAILED - ' + err.message;
+                        console.log(result);
+                        alert(result);
+                    });
             });
             
             console.log('Dashboard script loaded - Clerk integration ready!');
