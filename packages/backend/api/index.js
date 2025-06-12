@@ -223,53 +223,123 @@ app.get('*', (req, res) => {
             
             // Initialize Clerk (optional)
             let clerk = null;
+            let clerkLoaded = false;
             
             function initializeClerk() {
                 if (window.Clerk) {
+                    console.log('Initializing Clerk...');
                     clerk = new window.Clerk('pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk');
+                    
                     clerk.load().then(() => {
                         console.log('Clerk loaded successfully');
+                        clerkLoaded = true;
+                        
                         if (clerk.user) {
                             console.log('User is signed in:', clerk.user);
-                            userInfo.textContent = 'Welcome, ' + (clerk.user.firstName || clerk.user.emailAddresses[0]?.emailAddress || 'User');
-                            signInBtn.style.display = 'none';
-                            signOutBtn.style.display = 'block';
+                            updateUserInterface(clerk.user);
+                        } else {
+                            console.log('User is not signed in');
                         }
+                        
+                        // Listen for authentication state changes
+                        clerk.addListener('user', (user) => {
+                            console.log('User state changed:', user);
+                            if (user) {
+                                updateUserInterface(user);
+                            } else {
+                                resetUserInterface();
+                            }
+                        });
+                        
                     }).catch(err => {
-                        console.log('Clerk load error (optional):', err);
+                        console.log('Clerk load error:', err);
+                        clerkLoaded = false;
                     });
+                } else {
+                    console.log('Clerk not available');
                 }
+            }
+            
+            function updateUserInterface(user) {
+                const displayName = user.firstName || 
+                                  user.lastName || 
+                                  (user.emailAddresses && user.emailAddresses[0]?.emailAddress) || 
+                                  'User';
+                userInfo.textContent = `Welcome, ${displayName}`;
+                signInBtn.style.display = 'none';
+                signOutBtn.style.display = 'block';
+            }
+            
+            function resetUserInterface() {
+                userInfo.textContent = 'Demo Mode';
+                signInBtn.style.display = 'block';
+                signOutBtn.style.display = 'none';
             }
             
             // Load dashboard immediately (don't wait for auth)
             console.log('Loading dashboard...');
             fetchCosts();
             
-            // Try to load Clerk (optional)
+            // Try to load Clerk
+            console.log('Loading Clerk authentication...');
             const clerkScript = document.createElement('script');
             clerkScript.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
-            clerkScript.onload = initializeClerk;
-            clerkScript.onerror = () => console.log('Clerk failed to load (optional)');
+            clerkScript.onload = () => {
+                console.log('Clerk script loaded');
+                initializeClerk();
+            };
+            clerkScript.onerror = () => {
+                console.log('Clerk failed to load');
+                clerkLoaded = false;
+            };
             document.head.appendChild(clerkScript);
             
             // Event listeners
             signInBtn.addEventListener('click', () => {
-                console.log('Sign in clicked');
-                if (clerk) {
+                console.log('Sign in button clicked');
+                
+                if (!clerkLoaded) {
+                    // Show loading state
+                    signInBtn.textContent = 'Loading...';
+                    signInBtn.disabled = true;
+                    
+                    // Wait a bit for Clerk to load, then try again
+                    setTimeout(() => {
+                        if (clerk && clerkLoaded) {
+                            console.log('Clerk now available, redirecting to sign in');
+                            clerk.redirectToSignIn();
+                        } else {
+                            alert('Authentication system is still loading. Please wait a moment and try again.');
+                            signInBtn.textContent = 'Sign In with Clerk';
+                            signInBtn.disabled = false;
+                        }
+                    }, 2000);
+                } else if (clerk) {
+                    console.log('Redirecting to Clerk sign in');
                     clerk.redirectToSignIn();
                 } else {
-                    alert('Authentication system is loading. Please try again in a moment.');
+                    alert('Authentication system is not available. Please refresh the page and try again.');
                 }
             });
             
             signOutBtn.addEventListener('click', () => {
-                console.log('Sign out clicked');
-                if (clerk) {
+                console.log('Sign out button clicked');
+                if (clerk && clerkLoaded) {
+                    signOutBtn.textContent = 'Signing out...';
+                    signOutBtn.disabled = true;
+                    
                     clerk.signOut().then(() => {
-                        userInfo.textContent = 'Demo Mode';
-                        signInBtn.style.display = 'block';
-                        signOutBtn.style.display = 'none';
+                        console.log('Successfully signed out');
+                        resetUserInterface();
+                        signOutBtn.textContent = 'Sign Out';
+                        signOutBtn.disabled = false;
+                    }).catch(err => {
+                        console.error('Sign out error:', err);
+                        signOutBtn.textContent = 'Sign Out';
+                        signOutBtn.disabled = false;
                     });
+                } else {
+                    console.log('Clerk not available for sign out');
                 }
             });
             
