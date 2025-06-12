@@ -74,19 +74,12 @@ app.get('*', (req, res) => {
                         <div class="flex justify-between items-center py-4">
                             <h1 class="text-2xl font-bold text-gray-900">Cost Management Dashboard</h1>
                             <div class="flex items-center space-x-4">
-                                <span class="text-sm text-gray-700" id="user-info">Demo Mode</span>
+                                <span class="text-sm text-gray-700" id="user-info">Demo Mode - Working!</span>
                                 <button 
-                                    id="sign-in-btn"
-                                    class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+                                    id="add-auth-btn"
+                                    class="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700"
                                 >
-                                    Sign In with Clerk
-                                </button>
-                                <button 
-                                    id="sign-out-btn"
-                                    class="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700"
-                                    style="display: none;"
-                                >
-                                    Sign Out
+                                    Add Authentication
                                 </button>
                             </div>
                         </div>
@@ -158,8 +151,7 @@ app.get('*', (req, res) => {
             const chartSection = document.getElementById('chart-section');
             const tableSection = document.getElementById('table-section');
             const userInfo = document.getElementById('user-info');
-            const signInBtn = document.getElementById('sign-in-btn');
-            const signOutBtn = document.getElementById('sign-out-btn');
+            const addAuthBtn = document.getElementById('add-auth-btn');
             const costsTableBody = document.getElementById('costs-table-body');
             
             function showError(message) {
@@ -221,129 +213,16 @@ app.get('*', (req, res) => {
                 }
             }
             
-            // Initialize Clerk (optional)
-            let clerk = null;
-            let clerkLoaded = false;
-            
-            function initializeClerk() {
-                if (window.Clerk) {
-                    console.log('Initializing Clerk...');
-                    clerk = new window.Clerk('pk_test_aW1wcm92ZWQtcmVkYmlyZC04NS5jbGVyay5hY2NvdW50cy5kZXYk');
-                    
-                    clerk.load().then(() => {
-                        console.log('Clerk loaded successfully');
-                        clerkLoaded = true;
-                        
-                        if (clerk.user) {
-                            console.log('User is signed in:', clerk.user);
-                            updateUserInterface(clerk.user);
-                        } else {
-                            console.log('User is not signed in');
-                        }
-                        
-                        // Listen for authentication state changes
-                        clerk.addListener('user', (user) => {
-                            console.log('User state changed:', user);
-                            if (user) {
-                                updateUserInterface(user);
-                            } else {
-                                resetUserInterface();
-                            }
-                        });
-                        
-                    }).catch(err => {
-                        console.log('Clerk load error:', err);
-                        clerkLoaded = false;
-                    });
-                } else {
-                    console.log('Clerk not available');
-                }
-            }
-            
-            function updateUserInterface(user) {
-                const displayName = user.firstName || 
-                                  user.lastName || 
-                                  (user.emailAddresses && user.emailAddresses[0]?.emailAddress) || 
-                                  'User';
-                userInfo.textContent = `Welcome, ${displayName}`;
-                signInBtn.style.display = 'none';
-                signOutBtn.style.display = 'block';
-            }
-            
-            function resetUserInterface() {
-                userInfo.textContent = 'Demo Mode';
-                signInBtn.style.display = 'block';
-                signOutBtn.style.display = 'none';
-            }
-            
-            // Load dashboard immediately (don't wait for auth)
+            // Load dashboard immediately
             console.log('Loading dashboard...');
             fetchCosts();
             
-            // Try to load Clerk
-            console.log('Loading Clerk authentication...');
-            const clerkScript = document.createElement('script');
-            clerkScript.src = 'https://unpkg.com/@clerk/clerk-js@latest/dist/clerk.browser.js';
-            clerkScript.onload = () => {
-                console.log('Clerk script loaded');
-                initializeClerk();
-            };
-            clerkScript.onerror = () => {
-                console.log('Clerk failed to load');
-                clerkLoaded = false;
-            };
-            document.head.appendChild(clerkScript);
-            
-            // Event listeners
-            signInBtn.addEventListener('click', () => {
-                console.log('Sign in button clicked');
-                
-                if (!clerkLoaded) {
-                    // Show loading state
-                    signInBtn.textContent = 'Loading...';
-                    signInBtn.disabled = true;
-                    
-                    // Wait a bit for Clerk to load, then try again
-                    setTimeout(() => {
-                        if (clerk && clerkLoaded) {
-                            console.log('Clerk now available, redirecting to sign in');
-                            clerk.redirectToSignIn();
-                        } else {
-                            alert('Authentication system is still loading. Please wait a moment and try again.');
-                            signInBtn.textContent = 'Sign In with Clerk';
-                            signInBtn.disabled = false;
-                        }
-                    }, 2000);
-                } else if (clerk) {
-                    console.log('Redirecting to Clerk sign in');
-                    clerk.redirectToSignIn();
-                } else {
-                    alert('Authentication system is not available. Please refresh the page and try again.');
-                }
+            // Event listener for adding authentication later
+            addAuthBtn.addEventListener('click', () => {
+                alert('Authentication will be added in the next step once the dashboard is stable!');
             });
             
-            signOutBtn.addEventListener('click', () => {
-                console.log('Sign out button clicked');
-                if (clerk && clerkLoaded) {
-                    signOutBtn.textContent = 'Signing out...';
-                    signOutBtn.disabled = true;
-                    
-                    clerk.signOut().then(() => {
-                        console.log('Successfully signed out');
-                        resetUserInterface();
-                        signOutBtn.textContent = 'Sign Out';
-                        signOutBtn.disabled = false;
-                    }).catch(err => {
-                        console.error('Sign out error:', err);
-                        signOutBtn.textContent = 'Sign Out';
-                        signOutBtn.disabled = false;
-                    });
-                } else {
-                    console.log('Clerk not available for sign out');
-                }
-            });
-            
-            console.log('Dashboard script loaded');
+            console.log('Dashboard script loaded - No Clerk, no crashes!');
         </script>
     </body>
     </html>
