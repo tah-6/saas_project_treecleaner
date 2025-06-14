@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, useAuth, SignIn, SignUp } from '@clerk/clerk-react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
 
@@ -36,12 +36,36 @@ function App() {
                 <SignedOut>
                   <div className="flex items-center justify-center min-h-screen">
                     <div className="text-center">
-                      <h1 className="text-2xl font-bold mb-4">Please sign in to continue</h1>
-                      <p className="text-gray-600">You need to be signed in to access the dashboard.</p>
+                      <h1 className="text-2xl font-bold mb-4">Welcome to TreeCleaner</h1>
+                      <p className="text-gray-600 mb-8">Please sign in or create an account to continue.</p>
+                      <div className="flex justify-center space-x-4">
+                        <SignIn routing="path" path="/sign-in" />
+                        <SignUp routing="path" path="/sign-up" />
+                      </div>
                     </div>
                   </div>
                 </SignedOut>
               </>
+            }
+          />
+          <Route
+            path="/sign-in/*"
+            element={
+              <SignedOut>
+                <div className="flex items-center justify-center min-h-screen">
+                  <SignIn routing="path" path="/sign-in" />
+                </div>
+              </SignedOut>
+            }
+          />
+          <Route
+            path="/sign-up/*"
+            element={
+              <SignedOut>
+                <div className="flex items-center justify-center min-h-screen">
+                  <SignUp routing="path" path="/sign-up" />
+                </div>
+              </SignedOut>
             }
           />
           <Route
