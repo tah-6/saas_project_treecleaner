@@ -15,7 +15,7 @@ function InnerApp() {
   }
 
   return (
-    <Router>
+    <Router future={{ v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-gray-100">
         <Routes>
           <Route
