@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
   BarChart,
   Bar,
@@ -12,12 +11,11 @@ import {
 } from 'recharts';
 
 interface Cost {
-  id: number;
-  service_name: string;
+  id: string;
   amount: number;
   category: string;
-  billing_date: string;
-  metadata: Record<string, any>;
+  description: string;
+  date: string;
 }
 
 interface CategoryTotal {
@@ -25,34 +23,43 @@ interface CategoryTotal {
   total: number;
 }
 
-const Dashboard = () => {
+function Dashboard() {
   const [costs, setCosts] = useState<Cost[]>([]);
+  const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCosts = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/costs');
-        setCosts(response.data);
-        setLoading(false);
+        const response = await fetch('/api/costs');
+        if (!response.ok) {
+          throw new Error('Failed to fetch costs');
+        }
+        const data = await response.json();
+        setCosts(data);
+
+        // Calculate category totals
+        const totals = data.reduce((acc: { [key: string]: number }, cost: Cost) => {
+          acc[cost.category] = (acc[cost.category] || 0) + cost.amount;
+          return acc;
+        }, {});
+
+        // Convert to array format for Recharts
+        const categoryData = (Object.entries(totals) as [string, number][]).map(([category, total]) => ({
+          category,
+          total: Number(total.toFixed(2))
+        }));
+
+        setCategoryTotals(categoryData);
       } catch (err) {
-        setError('Failed to fetch cost data');
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
         setLoading(false);
       }
     };
 
     fetchCosts();
-  }, []);
-
-  const categoryTotals = costs.reduce((acc: CategoryTotal[], cost) => {
-    const existingCategory = acc.find(item => item.category === cost.category);
-    if (existingCategory) {
-      existingCategory.total += cost.amount;
-    } else {
-      acc.push({ category: cost.category, total: cost.amount });
-    }
-    return acc;
   }, []);
 
   if (loading) {
@@ -66,16 +73,19 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">{error}</div>
+        <div className="text-red-500 text-center">
+          <h2 className="text-xl font-bold mb-2">Error</h2>
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Cost Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6">Cost Analysis Dashboard</h1>
       
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Costs by Category</h2>
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -106,17 +116,17 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Cost Details</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Costs</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Service
+                  Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
+                  Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
@@ -127,19 +137,19 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {costs.map((cost) => (
+              {costs.slice(0, 5).map((cost) => (
                 <tr key={cost.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {cost.service_name}
+                    {cost.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {cost.category}
+                    {cost.description}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     ${cost.amount.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(cost.billing_date).toLocaleDateString()}
+                    {new Date(cost.date).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
@@ -149,6 +159,6 @@ const Dashboard = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard; 
