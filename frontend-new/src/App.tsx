@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, useAuth, SignInButton, SignUpButton } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
 
@@ -23,7 +23,7 @@ function App() {
               <>
                 <SignedIn>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Welcome to the Dashboard</h1>
+                    <h1 className="text-2xl font-bold mb-4">Welcome to TreeCleaner</h1>
                     <p className="mb-4">User ID: {userId}</p>
                     <button
                       onClick={() => window.location.href = '/dashboard'}
@@ -37,18 +37,14 @@ function App() {
                   <div className="flex items-center justify-center min-h-screen">
                     <div className="text-center">
                       <h1 className="text-2xl font-bold mb-4">Welcome to TreeCleaner</h1>
-                      <p className="text-gray-600 mb-8">Please sign in or create an account to continue.</p>
-                      <div className="flex justify-center space-x-4">
-                        <SignInButton mode="modal">
-                          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                            Sign In
-                          </button>
-                        </SignInButton>
-                        <SignUpButton mode="modal">
-                          <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                            Sign Up
-                          </button>
-                        </SignUpButton>
+                      <p className="text-gray-600 mb-8">Please sign in to continue</p>
+                      <div className="flex justify-center">
+                        <a
+                          href="/sign-in"
+                          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                          Sign In
+                        </a>
                       </div>
                     </div>
                   </div>
