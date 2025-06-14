@@ -1,3 +1,4 @@
+// Dashboard component with cost visualization using Recharts
 import { useState, useEffect } from 'react';
 import {
   BarChart,
