@@ -49,8 +49,10 @@ function Dashboard() {
         }
         const data = await response.json();
         setCosts(data);
+        setError(null); // Clear any previous errors
       } catch (err) {
         console.warn('Using mock data due to API error:', err);
+        setError('Failed to fetch costs from API. Using mock data instead.');
         // Fallback to mock data if API fails
         setCosts(mockCosts);
       } finally {
