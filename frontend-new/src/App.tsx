@@ -1,5 +1,5 @@
 // Updated Clerk implementation with proper provider structure
-import { ClerkProvider, SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 
@@ -69,13 +69,7 @@ function InnerApp() {
 }
 
 function App() {
-  return (
-    <ClerkProvider
-      publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-    >
-      <InnerApp />
-    </ClerkProvider>
-  );
+  return <InnerApp />;
 }
 
 export default App;
