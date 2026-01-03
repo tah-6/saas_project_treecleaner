@@ -1,34 +1,11 @@
-// Mock data for testing
-const mockSubscriptions = [
-  {
-    id: '1',
-    serviceName: 'AWS Cloud Services',
-    amount: 150.00,
-    category: 'CLOUD',
-    billingDate: new Date('2024-03-01'),
-    billingFrequency: 'MONTHLY',
-    userId: '1',
-    metadata: { region: 'us-east-1' },
-    createdAt: new Date('2024-03-01'),
-    updatedAt: new Date('2024-03-01')
-  },
-  {
-    id: '2',
-    serviceName: 'GitHub Team',
-    amount: 44.00,
-    category: 'SAAS',
-    billingDate: new Date('2024-03-01'),
-    billingFrequency: 'MONTHLY',
-    userId: '1',
-    metadata: { seats: 5 },
-    createdAt: new Date('2024-03-01'),
-    updatedAt: new Date('2024-03-01')
-  }
-];
+const Subscription = require('../models/Subscription');
 
 exports.getAllSubscriptions = async (req, res) => {
   try {
-    res.json(mockSubscriptions);
+    const subscriptions = await Subscription.findAll({
+      order: [['createdAt', 'DESC']]
+    });
+    res.json(subscriptions);
   } catch (error) {
     console.error('Error fetching subscriptions:', error);
     res.status(500).json({ error: 'Failed to fetch subscriptions' });
@@ -37,7 +14,7 @@ exports.getAllSubscriptions = async (req, res) => {
 
 exports.getSubscriptionById = async (req, res) => {
   try {
-    const subscription = mockSubscriptions.find(s => s.id === req.params.id);
+    const subscription = await Subscription.findByPk(req.params.id);
     if (!subscription) {
       return res.status(404).json({ error: 'Subscription not found' });
     }
@@ -50,13 +27,7 @@ exports.getSubscriptionById = async (req, res) => {
 
 exports.createSubscription = async (req, res) => {
   try {
-    const newSubscription = {
-      id: String(mockSubscriptions.length + 1),
-      ...req.body,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    mockSubscriptions.push(newSubscription);
+    const newSubscription = await Subscription.create(req.body);
     res.status(201).json(newSubscription);
   } catch (error) {
     console.error('Error creating subscription:', error);
@@ -66,18 +37,12 @@ exports.createSubscription = async (req, res) => {
 
 exports.updateSubscription = async (req, res) => {
   try {
-    const index = mockSubscriptions.findIndex(s => s.id === req.params.id);
-    if (index === -1) {
+    const subscription = await Subscription.findByPk(req.params.id);
+    if (!subscription) {
       return res.status(404).json({ error: 'Subscription not found' });
     }
 
-    const updatedSubscription = {
-      ...mockSubscriptions[index],
-      ...req.body,
-      updatedAt: new Date()
-    };
-    mockSubscriptions[index] = updatedSubscription;
-    
+    const updatedSubscription = await subscription.update(req.body);
     res.json(updatedSubscription);
   } catch (error) {
     console.error('Error updating subscription:', error);
@@ -87,12 +52,12 @@ exports.updateSubscription = async (req, res) => {
 
 exports.deleteSubscription = async (req, res) => {
   try {
-    const index = mockSubscriptions.findIndex(s => s.id === req.params.id);
-    if (index === -1) {
+    const subscription = await Subscription.findByPk(req.params.id);
+    if (!subscription) {
       return res.status(404).json({ error: 'Subscription not found' });
     }
 
-    mockSubscriptions.splice(index, 1);
+    await subscription.destroy();
     res.status(204).end();
   } catch (error) {
     console.error('Error deleting subscription:', error);

@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const sequelize = require('./config/database');
 const subscriptionsRouter = require('./routes/subscriptions');
 const usersRouter = require('./routes/users');
 
@@ -20,6 +21,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Sync database and start server
+sequelize.sync().then(() => {
+  console.log('Database synced successfully');
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}).catch(err => {
+  console.error('Failed to sync database:', err);
 }); 
