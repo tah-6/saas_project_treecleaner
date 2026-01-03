@@ -2,7 +2,13 @@ const Subscription = require('../models/Subscription');
 
 exports.getAllSubscriptions = async (req, res) => {
   try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: No user ID' });
+    }
+
     const subscriptions = await Subscription.findAll({
+      where: { userId },
       order: [['createdAt', 'DESC']]
     });
     res.json(subscriptions);
@@ -14,7 +20,11 @@ exports.getAllSubscriptions = async (req, res) => {
 
 exports.getSubscriptionById = async (req, res) => {
   try {
-    const subscription = await Subscription.findByPk(req.params.id);
+    const userId = req.headers['x-user-id'];
+    const subscription = await Subscription.findOne({
+      where: { id: req.params.id, userId }
+    });
+
     if (!subscription) {
       return res.status(404).json({ error: 'Subscription not found' });
     }
@@ -27,7 +37,15 @@ exports.getSubscriptionById = async (req, res) => {
 
 exports.createSubscription = async (req, res) => {
   try {
-    const newSubscription = await Subscription.create(req.body);
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: No user ID' });
+    }
+
+    const newSubscription = await Subscription.create({
+      ...req.body,
+      userId // Enforce userId from header/auth
+    });
     res.status(201).json(newSubscription);
   } catch (error) {
     console.error('Error creating subscription:', error);
@@ -37,9 +55,13 @@ exports.createSubscription = async (req, res) => {
 
 exports.updateSubscription = async (req, res) => {
   try {
-    const subscription = await Subscription.findByPk(req.params.id);
+    const userId = req.headers['x-user-id'];
+    const subscription = await Subscription.findOne({
+      where: { id: req.params.id, userId }
+    });
+
     if (!subscription) {
-      return res.status(404).json({ error: 'Subscription not found' });
+      return res.status(404).json({ error: 'Subscription not found or unauthorized' });
     }
 
     const updatedSubscription = await subscription.update(req.body);
@@ -52,9 +74,13 @@ exports.updateSubscription = async (req, res) => {
 
 exports.deleteSubscription = async (req, res) => {
   try {
-    const subscription = await Subscription.findByPk(req.params.id);
+    const userId = req.headers['x-user-id'];
+    const subscription = await Subscription.findOne({
+      where: { id: req.params.id, userId }
+    });
+
     if (!subscription) {
-      return res.status(404).json({ error: 'Subscription not found' });
+      return res.status(404).json({ error: 'Subscription not found or unauthorized' });
     }
 
     await subscription.destroy();

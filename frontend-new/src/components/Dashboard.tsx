@@ -1,5 +1,5 @@
-// Dashboard component with subscription visualization using Recharts
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import {
   BarChart,
   Bar,
@@ -51,6 +51,7 @@ const mockSubscriptions: Subscription[] = [
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'];
 
 function Dashboard() {
+  const { user } = useUser();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,8 @@ function Dashboard() {
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
+      if (!user) return; // Wait for user to be loaded
+
       try {
         let apiUrl = import.meta.env.VITE_API_URL || '';
         if (apiUrl.endsWith('/')) {
@@ -76,7 +79,14 @@ function Dashboard() {
         }
 
         console.log('Fetching subscriptions from:', `${apiUrl}/api/subscriptions`);
-        const response = await fetch(`${apiUrl}/api/subscriptions`);
+        console.log('User ID:', user.id);
+
+        const response = await fetch(`${apiUrl}/api/subscriptions`, {
+          headers: {
+            'x-user-id': user.id
+          }
+        });
+
         if (!response.ok) {
           throw new Error('Failed to fetch subscriptions');
         }
@@ -92,8 +102,10 @@ function Dashboard() {
       }
     };
 
-    fetchSubscriptions();
-  }, []);
+    if (user) {
+      fetchSubscriptions();
+    }
+  }, [user]);
 
   // Calculate totals
   useEffect(() => {
@@ -142,13 +154,19 @@ function Dashboard() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this subscription?')) return;
+    if (!user) return;
 
     try {
       if (isDemoMode) {
         setSubscriptions(prev => prev.filter(sub => sub.id !== id));
       } else {
         const apiUrl = import.meta.env.VITE_API_URL || '';
-        await fetch(`${apiUrl}/api/subscriptions/${id}`, { method: 'DELETE' });
+        await fetch(`${apiUrl}/api/subscriptions/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'x-user-id': user.id
+          }
+        });
         setSubscriptions(prev => prev.filter(sub => sub.id !== id));
       }
     } catch (err) {
@@ -160,12 +178,14 @@ function Dashboard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setLoading(true);
 
     try {
       const payload = {
         ...formData,
-        amount: parseFloat(formData.amount)
+        amount: parseFloat(formData.amount),
+        userId: user.id
       };
 
       if (isDemoMode) {
@@ -178,7 +198,7 @@ function Dashboard() {
           const newSub = {
             ...payload,
             id: Math.random().toString(36).substr(2, 9)
-          };
+          } as Subscription;
           setSubscriptions(prev => [...prev, newSub]);
         }
         resetForm();
@@ -189,7 +209,10 @@ function Dashboard() {
 
         const response = await fetch(url, {
           method,
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id
+          },
           body: JSON.stringify(payload)
         });
 
