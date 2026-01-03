@@ -19,7 +19,8 @@ import {
   Activity,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  X
 } from 'lucide-react';
 
 interface Subscription {
@@ -54,6 +55,17 @@ function Dashboard() {
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
+
+  // Modal & Form State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    serviceName: '',
+    category: 'SAAS',
+    amount: '',
+    billingFrequency: 'MONTHLY',
+    billingDate: new Date().toISOString().split('T')[0]
+  });
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -97,6 +109,101 @@ function Dashboard() {
     ? categoryTotals.reduce((max, current) => current.total > max.total ? current : max)
     : { category: 'N/A', total: 0 };
 
+  // Form Handlers
+  const resetForm = () => {
+    setFormData({
+      serviceName: '',
+      category: 'SAAS',
+      amount: '',
+      billingFrequency: 'MONTHLY',
+      billingDate: new Date().toISOString().split('T')[0]
+    });
+    setEditingId(null);
+    setIsModalOpen(false);
+  };
+
+  const handleEdit = (sub: Subscription) => {
+    setFormData({
+      serviceName: sub.serviceName,
+      category: sub.category,
+      amount: sub.amount.toString(),
+      billingFrequency: sub.billingFrequency,
+      billingDate: sub.billingDate.split('T')[0]
+    });
+    setEditingId(sub.id);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this subscription?')) return;
+
+    try {
+      if (isDemoMode) {
+        setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+      } else {
+        await fetch(`/api/subscriptions/${id}`, { method: 'DELETE' });
+        setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+      }
+    } catch (err) {
+      console.error('Failed to delete subscription:', err);
+      // Fallback for demo mode if API fails
+      setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const payload = {
+        ...formData,
+        amount: parseFloat(formData.amount)
+      };
+
+      if (isDemoMode) {
+        // Mock behavior for demo mode
+        if (editingId) {
+          setSubscriptions(prev => prev.map(sub =>
+            sub.id === editingId ? { ...sub, ...payload, id: editingId } : sub
+          ));
+        } else {
+          const newSub = {
+            ...payload,
+            id: Math.random().toString(36).substr(2, 9)
+          };
+          setSubscriptions(prev => [...prev, newSub]);
+        }
+        resetForm();
+      } else {
+        const url = editingId ? `/api/subscriptions/${editingId}` : '/api/subscriptions';
+        const method = editingId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Failed to save subscription');
+
+        const savedSub = await response.json();
+
+        if (editingId) {
+          setSubscriptions(prev => prev.map(sub => sub.id === editingId ? savedSub : sub));
+        } else {
+          setSubscriptions(prev => [...prev, savedSub]);
+        }
+        resetForm();
+      }
+    } catch (err) {
+      console.error('Failed to save subscription:', err);
+      alert('Failed to save subscription. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -112,7 +219,13 @@ function Dashboard() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Subscription Analysis</h1>
           <p className="text-slate-500 mt-1">Manage and track your recurring expenses</p>
         </div>
-        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-md transition-all flex items-center gap-2">
+        <button
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-md transition-all flex items-center gap-2"
+        >
           <Plus size={18} />
           Add Subscription
         </button>
@@ -243,10 +356,18 @@ function Dashboard() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="text-slate-400 hover:text-indigo-600 transition-colors" title="Edit">
+                        <button
+                          onClick={() => handleEdit(sub)}
+                          className="text-slate-400 hover:text-indigo-600 transition-colors"
+                          title="Edit"
+                        >
                           <Edit2 size={16} />
                         </button>
-                        <button className="text-slate-400 hover:text-rose-600 transition-colors" title="Delete">
+                        <button
+                          onClick={() => handleDelete(sub.id)}
+                          className="text-slate-400 hover:text-rose-600 transition-colors"
+                          title="Delete"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -265,6 +386,107 @@ function Dashboard() {
           )}
         </div>
       </div>
+      {/* Add/Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-lg font-bold text-slate-800">
+                {editingId ? 'Edit Subscription' : 'Add New Subscription'}
+              </h3>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Service Name</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  placeholder="e.g. Netflix, AWS, Spotify"
+                  value={formData.serviceName}
+                  onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                  <select
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    value={formData.category}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    <option value="SAAS">SaaS</option>
+                    <option value="CLOUD">Cloud</option>
+                    <option value="ENTERTAINMENT">Entertainment</option>
+                    <option value="DATABASE">Database</option>
+                    <option value="UTILITY">Utility</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="0.00"
+                    value={formData.amount}
+                    onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Billing Frequency</label>
+                  <select
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    value={formData.billingFrequency}
+                    onChange={e => setFormData({ ...formData, billingFrequency: e.target.value })}
+                  >
+                    <option value="MONTHLY">Monthly</option>
+                    <option value="YEARLY">Yearly</option>
+                    <option value="WEEKLY">Weekly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Next Billing Date</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    value={formData.billingDate}
+                    onChange={e => setFormData({ ...formData, billingDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Saving...' : (editingId ? 'Update' : 'Add Subscription')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
