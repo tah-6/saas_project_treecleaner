@@ -1,5 +1,5 @@
 // Updated Clerk implementation with proper provider structure
-import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, useAuth, SignIn } from '@clerk/clerk-react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 
@@ -51,6 +51,14 @@ function InnerApp() {
                   </div>
                 </SignedOut>
               </>
+            }
+          />
+          <Route
+            path="/sign-in"
+            element={
+              <div className="flex items-center justify-center min-h-screen">
+                <SignIn routing="path" path="/sign-in" />
+              </div>
             }
           />
           <Route
