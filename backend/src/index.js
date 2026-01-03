@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const costsRouter = require('./routes/costs');
+const subscriptionsRouter = require('./routes/subscriptions');
 const usersRouter = require('./routes/users');
 
 const app = express();
@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/costs', costsRouter);
+app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/users', usersRouter);
 
 // Error handling middleware
