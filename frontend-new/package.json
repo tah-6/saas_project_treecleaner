@@ -12,14 +12,15 @@
   "dependencies": {
     "@clerk/clerk-react": "^4.30.7",
     "@types/recharts": "^1.8.29",
+    "@vitejs/plugin-react": "^4.2.1",
     "axios": "^1.6.7",
+    "lucide-react": "^0.562.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
     "recharts": "^2.12.2",
     "tailwindcss": "^3.4.1",
-    "vite": "^5.1.6",
-    "@vitejs/plugin-react": "^4.2.1"
+    "vite": "^5.1.6"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",
