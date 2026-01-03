@@ -2,52 +2,41 @@
 import { SignedIn, SignedOut, useAuth, SignIn } from '@clerk/clerk-react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import Navbar from './components/Navbar';
+import Hero from './components/Hero';
+import Features from './components/Features';
 
 function InnerApp() {
-  const { isLoaded, userId } = useAuth();
+  const { isLoaded } = useAuth();
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[#F9F9F0]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
       </div>
     );
   }
 
   return (
     <Router future={{ v7_relativeSplatPath: true }}>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-[#F9F9F0]">
         <Routes>
           <Route
             path="/"
             element={
               <>
                 <SignedIn>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Welcome to TreeCleaner</h1>
-                    <p className="mb-4">User ID: {userId}</p>
-                    <button
-                      onClick={() => window.location.href = '/dashboard'}
-                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                      Go to Dashboard
-                    </button>
-                  </div>
+                  <Navigate to="/dashboard" replace />
                 </SignedIn>
                 <SignedOut>
-                  <div className="flex items-center justify-center min-h-screen">
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold mb-4">Welcome to TreeCleaner</h1>
-                      <p className="text-gray-600 mb-8">Please sign in to continue</p>
-                      <div className="flex justify-center">
-                        <a
-                          href="/sign-in"
-                          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        >
-                          Sign In
-                        </a>
-                      </div>
-                    </div>
+                  <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    <Hero />
+                    <Features />
+                    {/* Compact Footer */}
+                    <footer className="py-8 bg-white border-t border-slate-100 text-center">
+                      <p className="text-slate-500 text-sm">© {new Date().getFullYear()} TreeCleaner. All rights reserved.</p>
+                    </footer>
                   </div>
                 </SignedOut>
               </>
@@ -56,7 +45,7 @@ function InnerApp() {
           <Route
             path="/sign-in"
             element={
-              <div className="flex items-center justify-center min-h-screen">
+              <div className="flex items-center justify-center min-h-screen bg-[#F9F9F0]">
                 <SignIn routing="path" path="/sign-in" />
               </div>
             }
