@@ -9,12 +9,8 @@ export default function Hero() {
             <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[500px] h-[500px] bg-green-200/50 rounded-full blur-3xl" />
 
             <div className="relative max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center text-center">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm mb-8 animate-fade-in-up">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Now in Public Beta</span>
-                </div>
 
-                <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 max-w-4xl leading-[1.1]">
+                <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 max-w-4xl leading-[1.1] pt-12">
                     Master Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Subscriptions</span> with Confidence.
                 </h1>
 
