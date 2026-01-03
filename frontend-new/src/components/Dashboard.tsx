@@ -70,7 +70,11 @@ function Dashboard() {
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || '';
+        let apiUrl = import.meta.env.VITE_API_URL || '';
+        if (apiUrl.endsWith('/')) {
+          apiUrl = apiUrl.slice(0, -1);
+        }
+
         console.log('Fetching subscriptions from:', `${apiUrl}/api/subscriptions`);
         const response = await fetch(`${apiUrl}/api/subscriptions`);
         if (!response.ok) {
