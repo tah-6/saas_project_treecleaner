@@ -70,7 +70,8 @@ function Dashboard() {
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const response = await fetch('/api/subscriptions');
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/subscriptions`);
         if (!response.ok) {
           throw new Error('Failed to fetch subscriptions');
         }
@@ -141,7 +142,8 @@ function Dashboard() {
       if (isDemoMode) {
         setSubscriptions(prev => prev.filter(sub => sub.id !== id));
       } else {
-        await fetch(`/api/subscriptions/${id}`, { method: 'DELETE' });
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        await fetch(`${apiUrl}/api/subscriptions/${id}`, { method: 'DELETE' });
         setSubscriptions(prev => prev.filter(sub => sub.id !== id));
       }
     } catch (err) {
@@ -176,7 +178,8 @@ function Dashboard() {
         }
         resetForm();
       } else {
-        const url = editingId ? `/api/subscriptions/${editingId}` : '/api/subscriptions';
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const url = editingId ? `${apiUrl}/api/subscriptions/${editingId}` : `${apiUrl}/api/subscriptions`;
         const method = editingId ? 'PUT' : 'POST';
 
         const response = await fetch(url, {
