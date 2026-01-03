@@ -71,6 +71,7 @@ function Dashboard() {
     const fetchSubscriptions = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '';
+        console.log('Fetching subscriptions from:', `${apiUrl}/api/subscriptions`);
         const response = await fetch(`${apiUrl}/api/subscriptions`);
         if (!response.ok) {
           throw new Error('Failed to fetch subscriptions');
