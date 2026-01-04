@@ -276,22 +276,6 @@ function Dashboard() {
                   <div className="p-3 bg-indigo-50 rounded-full text-indigo-600">
                     <DollarSign size={24} />
                   </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Active Subscriptions</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{subscriptions.length}</p>
-                </div>
-                <div className="p-3 bg-emerald-50 rounded-full text-emerald-600">
-                  <Activity size={24} />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Highest Category</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2 capitalize">{highestCategory.category.toLowerCase()}</p>
                   <p className="text-xs text-slate-400 font-medium">Coming in at ${highestCategory.total.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-rose-50 rounded-full text-rose-600">
@@ -412,108 +396,108 @@ function Dashboard() {
               </div>
             </div>
             {/* Add/Edit Modal */}
-            {isModalOpen && (
-              <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 className="text-lg font-bold text-slate-800">
-                      {editingId ? 'Edit Subscription' : 'Add New Subscription'}
-                    </h3>
-                    <button onClick={resetForm} className="text-slate-400 hover:text-slate-600 transition-colors">
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Service Name</label>
-                      <input
-                        type="text"
-                        required
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                        placeholder="e.g. Netflix, AWS, Spotify"
-                        value={formData.serviceName}
-                        onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                        <select
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                          value={formData.category}
-                          onChange={e => setFormData({ ...formData, category: e.target.value })}
-                        >
-                          <option value="SAAS">SaaS</option>
-                          <option value="CLOUD">Cloud</option>
-                          <option value="ENTERTAINMENT">Entertainment</option>
-                          <option value="DATABASE">Database</option>
-                          <option value="UTILITY">Utility</option>
-                          <option value="OTHER">Other</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          required
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          placeholder="0.00"
-                          value={formData.amount}
-                          onChange={e => setFormData({ ...formData, amount: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Billing Frequency</label>
-                        <select
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                          value={formData.billingFrequency}
-                          onChange={e => setFormData({ ...formData, billingFrequency: e.target.value })}
-                        >
-                          <option value="MONTHLY">Monthly</option>
-                          <option value="YEARLY">Yearly</option>
-                          <option value="WEEKLY">Weekly</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Next Billing Date</label>
-                        <input
-                          type="date"
-                          required
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          value={formData.billingDate}
-                          onChange={e => setFormData({ ...formData, billingDate: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-4 flex gap-3">
-                      <button
-                        type="button"
-                        onClick={resetForm}
-                        className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                      >
-                        {loading ? 'Saving...' : (editingId ? 'Update' : 'Add Subscription')}
-                      </button>
-                    </div>
-                  </form>
-                </div>
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 className="text-lg font-bold text-slate-800">
+                  {editingId ? 'Edit Subscription' : 'Add New Subscription'}
+                </h3>
+                <button onClick={resetForm} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X size={20} />
+                </button>
               </div>
-            )}
+
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Service Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    placeholder="e.g. Netflix, AWS, Spotify"
+                    value={formData.serviceName}
+                    onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                    <select
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                      value={formData.category}
+                      onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    >
+                      <option value="SAAS">SaaS</option>
+                      <option value="CLOUD">Cloud</option>
+                      <option value="ENTERTAINMENT">Entertainment</option>
+                      <option value="DATABASE">Database</option>
+                      <option value="UTILITY">Utility</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Billing Frequency</label>
+                    <select
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                      value={formData.billingFrequency}
+                      onChange={e => setFormData({ ...formData, billingFrequency: e.target.value })}
+                    >
+                      <option value="MONTHLY">Monthly</option>
+                      <option value="YEARLY">Yearly</option>
+                      <option value="WEEKLY">Weekly</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Next Billing Date</label>
+                    <input
+                      type="date"
+                      required
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      value={formData.billingDate}
+                      onChange={e => setFormData({ ...formData, billingDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Saving...' : (editingId ? 'Update' : 'Add Subscription')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        );
+        )}
+      </div>
+      );
 }
 
-        export default Dashboard; 
+      export default Dashboard; 
