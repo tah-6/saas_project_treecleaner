@@ -528,14 +528,6 @@ function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* Troubleshooting Debugger - Remove in production */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-400 p-2 text-xs font-mono flex justify-between px-4 opacity-90 z-50">
-        <span>User: {user?.id?.slice(0, 8)}...</span>
-        <span>Mode: {isDemoMode ? 'DEMO' : 'LIVE'}</span>
-        <span>Records: {subscriptions.length}</span>
-        <span>Version: v1.1 (Isolation)</span>
-      </div>
     </div>
   );
 }
