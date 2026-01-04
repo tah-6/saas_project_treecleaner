@@ -53,9 +53,14 @@ function InnerApp() {
           <Route
             path="/dashboard"
             element={
-              <SignedIn>
-                <Dashboard />
-              </SignedIn>
+              <>
+                <SignedIn>
+                  <Dashboard />
+                </SignedIn>
+                <SignedOut>
+                  <Navigate to="/sign-in" replace />
+                </SignedOut>
+              </>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
