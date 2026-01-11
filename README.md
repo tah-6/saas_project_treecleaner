@@ -2,8 +2,6 @@ Tree Cleaner
 
 A dashboard for tracking dev overhead and codebase hygiene.
 
-[Live Demo](saasprojecttreecleaner.vercel.app) 
-
 Why I Built This?
 I noticed that between Vercel, OpenAI API credits, and various SaaS subscriptions, my "hobby" coding costs were creeping up without me realizing it. I wanted a single place to see my monthly burn rate versus my annual commitments, so I built Tree Cleaner to act as a centralized health check for my development ecosystem.
 
