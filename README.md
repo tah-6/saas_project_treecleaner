@@ -1,89 +1,28 @@
-# TreeCleaner SaaS Application
+Tree Cleaner
 
-A full-stack SaaS application built with Vite + React (frontend) and Express + PostgreSQL (backend).
+A dashboard for tracking dev overhead and codebase hygiene.
 
-## Tech Stack
+[Live Demo](saasprojecttreecleaner.vercel.app) 
 
-- Frontend:
-  - Vite + React
-  - TypeScript
-  - Tailwind CSS
-  - Clerk (Authentication)
-  - Stripe (Payments)
-  - React Router
-  - Zustand (State Management)
+Why I Built This?
+I noticed that between Vercel, OpenAI API credits, and various SaaS subscriptions, my "hobby" coding costs were creeping up without me realizing it. I wanted a single place to see my monthly burn rate versus my annual commitments, so I built Tree Cleaner to act as a centralized health check for my development ecosystem.
 
-- Backend:
-  - Express
-  - TypeScript
-  - PostgreSQL
-  - Clerk (Authentication)
-  - Stripe (Payments)
+Tech Stack
+- Frontend: Next.js (App Router), TypeScript, Tailwind CSS
+- Backend: Serverless Functions (Vercel), PostgreSQL
+- Auth: Clerk (Middleware protected routes)
+- Deployment: Vercel
 
-## Project Structure
+Key Features
+- Cost Visualization: Breaks down spending by category (Cloud, AI, Tools) to show where money is actually going.
+- Subscription Logic: Handles the difference between monthly and annual billing cycles.
+- Multi-Tenancy: Uses a relational schema where users are isolated; I learned a lot about Row Level Security (RLS) building this.
 
-```
-treecleaner/
-├── packages/
-│   ├── frontend/     # React frontend application
-│   ├── backend/      # Express backend server
-│   └── shared/       # Shared TypeScript types
-```
+One Cool Technical Detail
+The hardest part was standardizing billing cycles. Some tools charge on the 1st, others on the signup date. I ended up writing a normalization utility in TypeScript that converts everything into a standard "Monthly Burn" metric so the charts are actually accurate comparisons.
 
-## Setup Instructions
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-
-   Create `.env` files in both frontend and backend packages:
-
-   Backend (.env):
-   ```
-   PORT=3001
-   DATABASE_URL=postgresql://user:password@localhost:5432/treecleaner
-   CLERK_SECRET_KEY=your_clerk_secret_key
-   STRIPE_SECRET_KEY=your_stripe_secret_key
-   STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-   ```
-
-   Frontend (.env):
-   ```
-   VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-   VITE_API_URL=http://localhost:3001
-   ```
-
-4. Set up the database:
-   ```bash
-   # Create PostgreSQL database
-   createdb treecleaner
-   ```
-
-5. Start the development servers:
-   ```bash
-   # Start both frontend and backend
-   npm run dev
-
-   # Or start them separately
-   npm run dev:frontend
-   npm run dev:backend
-   ```
-
-## Development
-
-- Frontend runs on: http://localhost:3000
-- Backend runs on: http://localhost:3001
-
-## Building for Production
-
-```bash
-npm run build
-```
-
-## License
-
-MIT
+Running Locally
+1. Clone the repo
+2. Install dependencies: npm install
+3. Add your .env keys (Clerk & Postgres URL)
+4. Run dev server: npm run dev
